@@ -99,12 +99,12 @@ html, body {
   box-shadow: 0 10px 34px rgba(0,0,0,0.45), 0 0 0 6px rgba(255,255,255,0.08);
 }
 .brand-emblem.small { width: 78px; height: 78px; border-width: 2px; margin-bottom: 2px; }
-.logo-text { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; }
+.logo-text { display: inline-flex; flex-direction: column; align-items: center; gap: 14px; }
 .logo-main {
   font-size: clamp(42px, 11vw, 72px);
   font-weight: 900;
   letter-spacing: -2px;
-  line-height: 0.9;
+  line-height: 1;
   color: #fff;
   text-shadow: 0 4px 0 rgba(0,0,0,0.18), 0 14px 30px rgba(0,0,0,0.35);
 }

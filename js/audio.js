@@ -146,7 +146,7 @@ const Audio = (() => {
   // subtle seagull chirps in background (per spec, not mutable with music)
   function scheduleGulls() {
     if (!musicPlaying) return;
-    if (Math.random() < 0.6) sfx.gull();
+    if (!musicMuted && Math.random() < 0.6) sfx.gull();   // mute also silences the ambient gulls
     birdTimer = setTimeout(scheduleGulls, 2500 + Math.random() * 3500);
   }
 
