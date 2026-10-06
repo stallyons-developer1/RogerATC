@@ -72,7 +72,7 @@ html, body {
   z-index: 20;
   background:
     linear-gradient(180deg, rgba(14,7,28,0.64) 0%, rgba(14,7,28,0.3) 45%, rgba(14,7,28,0.6) 100%),
-    url('../assets/bg_sunset.png') center/cover no-repeat;
+    url('../assets/bg_sunset.webp') center/cover no-repeat;
   animation: fadeIn 0.4s ease;
 }
 .screen.overlay { background: rgba(15, 8, 30, 0.72); backdrop-filter: blur(6px); }
@@ -362,7 +362,7 @@ kbd {
   text-align: center;
   line-height: 1.22;
   z-index: 2;
-  background: url("../assets/bubble_frame_v2.png") center/100% 100% no-repeat;
+  background: url("../assets/bubble_frame_v2.webp") center/100% 100% no-repeat;
   animation: bubbleIn 0.3s ease;
 }
 /* frosted-glass fill, clipped to the cloud shape (clip-path works with backdrop-filter; mask does not) */

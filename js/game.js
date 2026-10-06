@@ -45,9 +45,9 @@ const Game = (() => {
     ctx = canvas.getContext('2d');
     bgImg = new Image();
     bgImg.onload = () => { bgReady = true; if (state === 'idle') drawIdleBackdrop(); };
-    bgImg.src = 'assets/bg_sunset.png';
+    bgImg.src = 'assets/bg_sunset.webp';
     // real palm silhouettes (wind-animated)
-    ['assets/palm.png', 'assets/palm2.png'].forEach((src, i) => {
+    ['assets/palm.webp', 'assets/palm2.webp'].forEach((src, i) => {
       const img = new Image();
       img.onload = () => { palmImgs[i] = img; if (palmImgs.filter(Boolean).length) palmReady = true; };
       img.src = src;
@@ -55,7 +55,7 @@ const Game = (() => {
     // realistic mountain peak
     mtnImg = new Image();
     mtnImg.onload = () => { mtnReady = true; mtnAspect = mtnImg.width / mtnImg.height; };
-    mtnImg.src = 'assets/mountain.png';
+    mtnImg.src = 'assets/mountain.webp';
     window.addEventListener('resize', resize);
     resize();
   }
