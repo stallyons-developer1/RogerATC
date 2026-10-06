@@ -14,11 +14,14 @@
 set -euo pipefail
 
 # ============================================================
-#  CONFIG  — edit these three lines for your server
+#  CONFIG  — fill in SSH_HOST and SSH_PORT (see steps below)
 # ============================================================
-SERVER="user@your-server.com"              # SSH  user@host  (uses your SSH key)
-SERVER_PATH="/var/www/html/rogeratc"       # the repo folder ON the server
-BRANCH="main"                              # git branch to deploy
+SSH_USER="sty2"                                   # cPanel username
+SSH_HOST="REPLACE_WITH_HOST"                      # server hostname/IP or your domain
+SSH_PORT="22"                                     # cPanel SSH port (often NOT 22 — check SSH Access)
+SERVER_PATH="/home/sty2/public_html/rogeratc"     # repo folder on the server
+BRANCH="main"
+SERVER="${SSH_USER}@${SSH_HOST}"
 # ============================================================
 
 cd "$(dirname "$0")"
@@ -36,25 +39,21 @@ fi
 echo "➤ 2/3  Pushing to origin/$BRANCH..."
 git push origin "$BRANCH"
 
-echo "➤ 3/3  Updating server ($SERVER)..."
-ssh "$SERVER" "cd '$SERVER_PATH' && git fetch --all --quiet && git reset --hard origin/$BRANCH && echo '   server now at:' \$(git rev-parse --short HEAD)"
+echo "➤ 3/3  Updating server ($SERVER:$SSH_PORT)..."
+ssh -p "$SSH_PORT" "$SERVER" "cd '$SERVER_PATH' && git fetch --all --quiet && git reset --hard origin/$BRANCH && echo '   server now at:' \$(git rev-parse --short HEAD)"
 
-echo "✅ Deployed successfully."
+echo "✅ Deployed.  Live at:  https://<your-domain>/rogeratc/"
 
 # ============================================================
-#  ONE-TIME SETUP
+#  ONE-TIME SETUP (do this once)
 # ============================================================
-#  On your Mac (first time only):
-#     git remote add origin git@github.com:devStallyons/RogerATC.git
-#     git push -u origin main
+#  Already done:  GitHub repo + first push.
 #
-#  On the server (first time only — clones the repo):
-#     git clone git@github.com:devStallyons/RogerATC.git "/var/www/html/rogeratc"
-#     # make sure the web root points at this folder
+#  On the SERVER — clone the repo into public_html/rogeratc.
+#  Easiest via cPanel ▸ Terminal (Advanced section), or over SSH:
+#     cd /home/sty2/public_html
+#     git clone https://github.com/stallyons-developer1/RogerATC.git rogeratc
 #
-#  Make this script runnable (first time only):
-#     chmod +x deploy.sh
-#
-#  After that, every update is just:
+#  Then from your Mac, every future update is just:
 #     ./deploy.sh
 # ============================================================
