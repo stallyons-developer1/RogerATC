@@ -72,3 +72,25 @@ Solo **and** Multiplayer free, **no ranking**, **no subscriptions**, plus a
 background music. This is copyrighted music — the **client must secure the rights
 / license** to use it in a commercial product. Swap `assets/music.mp3` with a
 licensed or royalty-free track when ready (no code change needed).
+
+---
+
+## 🔐 Login / Sign Up  (live)
+Self-contained auth — **PHP 8 + SQLite** on the cPanel host (no external service).
+- Code: `api/auth.php` + `api/db.php`.  DB: `/home/<user>/.rogeratc-data/auth.sqlite` (outside the web root, not downloadable).
+- **Email signup/login** with hashed passwords (bcrypt), secure httponly session cookie.
+- **Email verification**: a link is emailed on signup (`action=verify`). Uses PHP `mail()`. If mails don't arrive, check the host's mail/SPF/spam.
+- **High score** syncs to the account on game over.
+- **Play as Guest** is available (no account).
+
+### To enable Google Sign-In
+1. Create an OAuth **Client ID** in Google Cloud Console (type: Web), authorize `https://sty2.devmail-sty.online`.
+2. Put the Client ID in `js/ui.js` → `const GOOGLE_CLIENT_ID = '...'`.
+3. (Backend handler for Google tokens can then be added to `api/auth.php`.)
+
+## 📋 Still to build (from spec — product/backend)
+- **Multiplayer**: same-terrain seed + matchmaking server + realtime sync
+- **Subscriptions / payments** ($4.99 multiplayer, $24.99 ad-free) — Stripe/PayPal
+- **Ads** integration
+- **Messaging** between players, invite friends
+- **BreezeRogerATC.com** free variant (Solo+MP free, no ranking, + mascot)
