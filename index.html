@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1b1033" />
+  <title>RogerATC — ATC MAYDAY</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="css/style-v2.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- ===================== GAME CANVAS ===================== -->
+    <canvas id="game"></canvas>
+
+    <!-- ===================== IN-GAME HUD ===================== -->
+    <div id="hud" class="hud hidden">
+      <!-- Top bar -->
+      <div class="hud-top">
+        <div class="hud-score glass">
+          <span class="label">SCORE</span>
+          <span id="scoreValue">0</span>
+        </div>
+        <div class="hud-timer glass">
+          <span class="label">TIME</span>
+          <span id="timerValue">1:30</span>
+        </div>
+        <div class="hud-best glass">
+          <span class="label">BEST</span>
+          <span id="bestValue">0</span>
+        </div>
+      </div>
+
+      <!-- Radio chatter word bubble -->
+      <div id="chatter" class="chatter hidden">
+        <div class="chatter-frost"></div>
+        <span id="chatterText"></span>
+      </div>
+
+      <!-- Bottom controls -->
+      <div class="hud-bottom">
+        <button id="liftLeft" class="lift-btn" aria-label="Lift Left">
+          <span class="tap-word">TAP</span>
+          <span class="tap-sub">TO LIFT</span>
+        </button>
+
+        <div class="speedo glass">
+          <div class="speedo-dial">
+            <div id="speedoNeedle" class="speedo-needle"></div>
+          </div>
+          <div class="speedo-read"><span id="speedValue">0</span> <small>MPH</small></div>
+          <div id="callsignTag" class="callsign-tag"></div>
+        </div>
+
+        <button id="liftRight" class="lift-btn" aria-label="Lift Right">
+          <span class="tap-word">TAP</span>
+          <span class="tap-sub">TO LIFT</span>
+        </button>
+      </div>
+
+      <!-- Pause / mute mini controls -->
+      <div class="hud-mini">
+        <button id="muteBtn" class="mini-btn" title="Mute music">🔊</button>
+        <button id="pauseBtn" class="mini-btn" title="Pause">⏸</button>
+      </div>
+    </div>
+
+    <!-- ===================== START / MENU SCREEN ===================== -->
+    <section id="menu" class="screen">
+      <div class="menu-inner">
+        <div class="logo-wrap">
+          <img src="assets/logo_badge.png" class="brand-emblem" alt="RogerATC emblem" />
+          <div class="logo-text">
+            <span class="logo-main">Roger<span class="accent">ATC</span></span>
+            <span class="logo-sub">✈ ATC&nbsp;MAYDAY</span>
+          </div>
+        </div>
+
+        <p class="tagline">40,000 ft of birds, towers &amp; jet streams. Keep tapping. Stay alive.</p>
+
+        <!-- Mode selection -->
+        <div class="opt-group">
+          <span class="opt-title">MODE</span>
+          <div class="seg" id="modeSeg">
+            <button class="seg-btn active" data-mode="solo">SOLO <small>Free</small></button>
+            <button class="seg-btn locked" data-mode="multi">MULTIPLAYER <small>$4.99/mo 🔒</small></button>
+          </div>
+        </div>
+
+        <!-- Level selection -->
+        <div class="opt-group">
+          <span class="opt-title">LEVEL</span>
+          <div class="seg" id="levelSeg">
+            <button class="seg-btn active" data-level="regular">REGULAR <small>1:30</small></button>
+            <button class="seg-btn" data-level="extended">EXTENDED <small>2:30</small></button>
+          </div>
+        </div>
+
+        <button id="startBtn" class="primary-btn">START FLIGHT ✈</button>
+
+        <div class="menu-foot">
+          <button id="menuMute" class="ghost-btn">🔊 Music On</button>
+          <button id="howToBtn" class="ghost-btn">How to play</button>
+        </div>
+      </div>
+
+      <!-- decorative version pill -->
+      <div class="version-pill">RogerATC • Main Version</div>
+    </section>
+
+    <!-- ===================== CALL SIGN SCREEN ===================== -->
+    <section id="callsign" class="screen hidden">
+      <div class="menu-inner">
+        <h2 class="screen-title">PICK YOUR CALL SIGN</h2>
+        <p class="screen-sub">This is your plane's name on the radio.</p>
+        <div id="callsignGrid" class="callsign-grid"></div>
+        <div class="callsign-actions">
+          <button id="callBack" class="ghost-btn">← Back</button>
+          <button id="callGo" class="primary-btn">CLEARED FOR TAKEOFF ✈</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== HOW TO PLAY ===================== -->
+    <section id="howto" class="screen hidden">
+      <div class="menu-inner howto-inner">
+        <h2 class="screen-title">HOW TO FLY</h2>
+        <ul class="howto-list">
+          <li><b>TAP LEFT or RIGHT</b> button (or press <kbd>Space</kbd> / <kbd>←</kbd> / <kbd>→</kbd>) to lift. Your plane falls on its own.</li>
+          <li><b>+2000</b> Jet Stream &nbsp;·&nbsp; <b>+500</b> Valley &nbsp;·&nbsp; <b>+300</b> Peak/Stack &nbsp;·&nbsp; <b>+100</b> Bonus Zone &nbsp;·&nbsp; <b>+25</b> Cloud</li>
+          <li><b>−25</b> Small bird / toxic smoke &nbsp;·&nbsp; <b>−50</b> touching the floor</li>
+          <li><span class="warn">CRASH</span> if you hit the 40k ft ceiling, a mountain, a tower, or a <b>Big Yellow Bird</b>.</li>
+          <li>Hit <b>3 small birds</b> total and your plane goes down.</li>
+          <li>Survive the full course to see <b>"YOU SURVIVED!"</b></li>
+        </ul>
+        <button id="howBack" class="primary-btn">GOT IT ✈</button>
+      </div>
+    </section>
+
+    <!-- ===================== GAME OVER / SURVIVED ===================== -->
+    <section id="result" class="screen hidden">
+      <div class="menu-inner result-inner">
+        <img src="assets/logo_badge.png" class="brand-emblem small" alt="RogerATC" />
+        <h2 id="resultTitle" class="result-title">GAME OVER</h2>
+        <p id="resultMsg" class="result-msg"></p>
+        <div class="result-scores">
+          <div class="result-score glass">
+            <span class="label">YOUR SCORE</span>
+            <span id="resultScore">0</span>
+          </div>
+          <div class="result-score glass">
+            <span class="label">BEST</span>
+            <span id="resultBest">0</span>
+          </div>
+        </div>
+        <div id="newBest" class="new-best hidden">★ NEW PERSONAL BEST! ★</div>
+        <div class="result-actions">
+          <button id="retryBtn" class="primary-btn">FLY AGAIN ✈</button>
+          <button id="homeBtn" class="ghost-btn">Main Menu</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== PAUSE OVERLAY ===================== -->
+    <section id="pause" class="screen overlay hidden">
+      <div class="menu-inner">
+        <h2 class="screen-title">PAUSED</h2>
+        <div class="result-actions">
+          <button id="resumeBtn" class="primary-btn">RESUME ✈</button>
+          <button id="quitBtn" class="ghost-btn">Quit to Menu</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- cloud clip-path for the frosted word-bubble interior (works with backdrop-filter) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <clipPath id="cloudclip" clipPathUnits="objectBoundingBox">
+        <ellipse cx="0.5" cy="0.42" rx="0.43" ry="0.33"/>
+        <ellipse cx="0.3" cy="0.3" rx="0.2" ry="0.2"/>
+        <ellipse cx="0.5" cy="0.23" rx="0.25" ry="0.22"/>
+        <ellipse cx="0.7" cy="0.3" rx="0.2" ry="0.2"/>
+        <ellipse cx="0.17" cy="0.46" rx="0.15" ry="0.18"/>
+        <ellipse cx="0.83" cy="0.46" rx="0.15" ry="0.18"/>
+        <ellipse cx="0.38" cy="0.62" rx="0.18" ry="0.18"/>
+        <ellipse cx="0.62" cy="0.62" rx="0.18" ry="0.18"/>
+      </clipPath>
+    </defs>
+  </svg>
+
+  <script src="js/audio.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>

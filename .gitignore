@@ -1,0 +1,17 @@
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Design / source working files — kept locally, NOT deployed to the server
+*.psd
+*.eps
+*.docx
+Gemini_Generated_*
+Code_Generated_Image.png
+39574c83-f725-4b6e-a37b-de61feb2eda3_removalai_preview.png
+RogerATC logo 01.jpg
+image (3).png
+
+# unused intermediate bubble assets (v2 files are the ones in use)
+assets/bubble_frame.png
+assets/bubble_mask.png
