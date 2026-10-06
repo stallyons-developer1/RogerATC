@@ -17,8 +17,8 @@ set -euo pipefail
 #  CONFIG  — fill in SSH_HOST and SSH_PORT (see steps below)
 # ============================================================
 SSH_USER="sty2"                                   # cPanel username
-SSH_HOST="REPLACE_WITH_HOST"                      # server hostname/IP or your domain
-SSH_PORT="22"                                     # cPanel SSH port (often NOT 22 — check SSH Access)
+SSH_HOST="172.96.189.224"                         # server IP
+SSH_PORT="22"                                      # SSH port
 SERVER_PATH="/home/sty2/public_html/rogeratc"     # repo folder on the server
 BRANCH="main"
 SERVER="${SSH_USER}@${SSH_HOST}"
