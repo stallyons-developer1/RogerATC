@@ -63,3 +63,12 @@ Solo **and** Multiplayer free, **no ranking**, **no subscriptions**, plus a
 - **Multiplayer, messaging, invites, sign-up (email/Google), ads & subscriptions**
   are product/backend features — scaffolded in the UI, to be wired to a backend next.
 - Real multiplayer needs the "same terrain" seed + matchmaking server (Phase 2/3).
+
+---
+
+## ⚠️ Music licensing note
+`assets/music.mp3` is a 3-minute clip of the client-provided YouTube track
+("Smoke And Chill — Lofi Hip Hop & Chillhop Mix", id JqLIV9QzYt8), looped as
+background music. This is copyrighted music — the **client must secure the rights
+/ license** to use it in a commercial product. Swap `assets/music.mp3` with a
+licensed or royalty-free track when ready (no code change needed).

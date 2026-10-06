@@ -537,8 +537,8 @@ const Game = (() => {
     ctx.setLineDash([]);
     ctx.fillStyle = 'rgba(255,90,110,0.95)';
     ctx.font = '700 12px Trebuchet MS, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('— 40,000 ft CEILING —', 12, ceilingY - 6);
+    ctx.textAlign = 'center';
+    ctx.fillText('40,000 ft CEILING', W / 2, ceilingY + 16);
     // floor penalty line
     ctx.setLineDash([8, 8]);
     ctx.strokeStyle = 'rgba(255,200,120,0.6)';

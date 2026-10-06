@@ -15,6 +15,7 @@ const Audio = (() => {
   let musicMuted = false;
   let musicTimer = null;
   let birdTimer = null;
+  let bgMusic = null;                 // <audio> element — the real background track
 
   function ensure() {
     if (ctx) return;
@@ -133,15 +134,20 @@ const Audio = (() => {
 
   function startMusic() {
     ensure();
-    if (musicPlaying) return;
-    musicPlaying = true;
-    musicStep();
-    scheduleGulls();
+    // real background track (the client's YouTube clip) — loops, keeps playing across games
+    if (!bgMusic) bgMusic = document.getElementById('bgMusic');
+    if (bgMusic) {
+      bgMusic.volume = 0.5;
+      bgMusic.muted = musicMuted;
+      if (bgMusic.paused) bgMusic.play().catch(() => {});
+    }
+    if (!musicPlaying) { musicPlaying = true; scheduleGulls(); }
   }
   function stopMusic() {
     musicPlaying = false;
     if (musicTimer) clearTimeout(musicTimer);
     if (birdTimer) clearTimeout(birdTimer);
+    if (bgMusic) bgMusic.pause();
   }
   // subtle seagull chirps in background (per spec, not mutable with music)
   function scheduleGulls() {
@@ -153,7 +159,10 @@ const Audio = (() => {
   function toggleMute() {
     ensure();
     musicMuted = !musicMuted;
-    musicGain.gain.value = musicMuted ? 0 : 0.18;
+    // mute EVERYTHING: music track + all web-audio (gulls + sfx)
+    master.gain.value = musicMuted ? 0 : 0.9;
+    if (!bgMusic) bgMusic = document.getElementById('bgMusic');
+    if (bgMusic) bgMusic.muted = musicMuted;
     return musicMuted;
   }
   function isMuted() { return musicMuted; }

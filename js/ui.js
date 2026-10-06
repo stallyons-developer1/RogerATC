@@ -226,7 +226,7 @@
   function updateMuteLabels() {
     const m = Audio.isMuted();
     $('muteBtn').textContent = m ? '🔇' : '🔊';
-    $('menuMute').textContent = m ? '🔇 Music Off' : '🔊 Music On';
+    $('menuMute').textContent = m ? '🔇 Sound Off' : '🔊 Sound On';
   }
 
   /* ---------------------------------------------------------- input: lift */
