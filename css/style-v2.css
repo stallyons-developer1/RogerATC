@@ -213,6 +213,45 @@ html, body {
   font-weight: 700;
 }
 
+/* ===================== AUTH (login / signup) ===================== */
+.auth-inner { gap: 16px; max-width: 360px; }
+.auth-tabs {
+  display: flex; width: 100%; background: rgba(0,0,0,0.2);
+  border: 1px solid var(--glass-brd); border-radius: 14px; padding: 5px; gap: 5px;
+}
+.auth-tab {
+  flex: 1; border: none; background: transparent; color: rgba(255,255,255,0.75);
+  padding: 11px; border-radius: 10px; font-family: var(--font); font-weight: 800;
+  font-size: 15px; cursor: pointer; transition: all 0.16s ease;
+}
+.auth-tab.active {
+  background: linear-gradient(135deg, var(--sunset-1), var(--sunset-2));
+  color: #fff; box-shadow: 0 5px 14px rgba(255,122,77,0.45);
+}
+.auth-form { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+.auth-form input {
+  width: 100%; padding: 14px 16px; border-radius: 13px;
+  border: 1px solid var(--glass-brd); background: rgba(255,255,255,0.12);
+  color: #fff; font-family: var(--font); font-size: 15px; font-weight: 600;
+  outline: none; transition: border 0.15s, background 0.15s;
+}
+.auth-form input::placeholder { color: rgba(255,255,255,0.6); font-weight: 500; }
+.auth-form input:focus { border-color: var(--gold); background: rgba(255,255,255,0.18); }
+.auth-msg { font-size: 13px; font-weight: 700; min-height: 16px; text-align: center; }
+.auth-msg.err { color: var(--bad); }
+.auth-msg.ok { color: var(--good); }
+.auth-or { display: flex; align-items: center; gap: 10px; width: 100%; color: rgba(255,255,255,0.5); font-size: 12px; font-weight: 700; }
+.auth-or::before, .auth-or::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.25); }
+.google-btn {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 13px; border-radius: 13px; border: none; background: #fff; color: #3c4043;
+  font-family: var(--font); font-weight: 800; font-size: 15px; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25); transition: transform 0.12s;
+}
+.google-btn:hover { transform: translateY(-1px); }
+.google-btn .g { font-weight: 900; color: #4285f4; font-size: 18px; }
+#guestBtn { width: 100%; }
+
 /* ===================== CALL SIGN GRID ===================== */
 .screen-title {
   font-size: clamp(24px, 6.5vw, 36px);

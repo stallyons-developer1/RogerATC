@@ -11,7 +11,7 @@
   const hide = (el) => el.classList.add('hidden');
 
   // ---- elements ----
-  const screens = { menu: $('menu'), callsign: $('callsign'), howto: $('howto'), result: $('result'), pause: $('pause') };
+  const screens = { auth: $('auth'), menu: $('menu'), callsign: $('callsign'), howto: $('howto'), result: $('result'), pause: $('pause') };
   const hud = $('hud');
   const canvas = $('game');
 
@@ -31,6 +31,20 @@
   const HS_KEY = 'rogeratc_highscore';
   const highScore = () => parseInt(localStorage.getItem(HS_KEY) || '0', 10);
   const saveHigh = (v) => localStorage.setItem(HS_KEY, String(v));
+
+  // ---- auth ----
+  let currentUser = null;               // { email, verified, high_score } or null (guest)
+  let authMode = 'login';
+  const GOOGLE_CLIENT_ID = '';          // <-- client fills this to enable Google sign-in
+  async function api(action, data) {
+    try {
+      const res = await fetch('api/auth.php?action=' + action, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data || {}),
+      });
+      return await res.json();
+    } catch (_) { return { error: 'Could not reach the server.' }; }
+  }
 
   /* ---------------------------------------------------------- init */
   Game.init(canvas);
@@ -186,6 +200,7 @@
     const hs = highScore();
     const isBest = scoreVal > hs;
     if (isBest) saveHigh(scoreVal);
+    if (currentUser) api('savescore', { score: scoreVal });   // sync to account
 
     if (result === 'survived') {
       el.resultTitle.textContent = 'YOU SURVIVED!';
@@ -252,6 +267,75 @@
 
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-  // start on menu
-  goto('menu');
+  /* ---------------------------------------------------------- auth flow */
+  function authMsg(text, ok) {
+    const e = $('authMsg');
+    e.textContent = text || '';
+    e.className = 'auth-msg' + (text ? (ok ? ' ok' : ' err') : '');
+  }
+  function setAuthMode(m) {
+    authMode = m;
+    document.querySelectorAll('.auth-tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === m));
+    $('authSubmit').textContent = m === 'login' ? 'LOG IN' : 'SIGN UP';
+    $('authPass').setAttribute('autocomplete', m === 'login' ? 'current-password' : 'new-password');
+    authMsg('');
+  }
+  document.querySelectorAll('.auth-tab').forEach((t) =>
+    t.addEventListener('click', () => { Audio.play('click'); setAuthMode(t.dataset.tab); }));
+
+  $('authForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    Audio.unlock();
+    const email = $('authEmail').value.trim();
+    const password = $('authPass').value;
+    $('authSubmit').disabled = true;
+    authMsg(authMode === 'login' ? 'Logging in…' : 'Creating account…', true);
+    const r = await api(authMode, { email, password });
+    $('authSubmit').disabled = false;
+    if (r.error) { authMsg(r.error, false); return; }
+    currentUser = r.user;
+    enterApp();
+  });
+
+  $('guestBtn').addEventListener('click', () => { Audio.unlock(); Audio.play('click'); currentUser = null; enterApp(); });
+
+  $('googleBtn').addEventListener('click', () => {
+    Audio.play('click');
+    if (!GOOGLE_CLIENT_ID) {
+      authMsg('Google sign-in needs the client’s OAuth Client ID (see README).', false);
+      return;
+    }
+    // Google Identity Services flow goes here once GOOGLE_CLIENT_ID is set.
+  });
+
+  $('logoutBtn').addEventListener('click', async () => {
+    Audio.play('click');
+    await api('logout');
+    currentUser = null;
+    updateAccountUI();
+    goto('auth');
+  });
+
+  function updateAccountUI() {
+    const pill = $('userPill');
+    if (currentUser) {
+      pill.textContent = currentUser.email + (currentUser.verified ? '' : ' • unverified');
+      show($('logoutBtn'));
+      if (currentUser.high_score && currentUser.high_score > highScore()) saveHigh(currentUser.high_score);
+      el.best.textContent = highScore();
+    } else {
+      pill.textContent = 'Guest • RogerATC';
+      hide($('logoutBtn'));
+    }
+  }
+
+  function enterApp() { updateAccountUI(); goto('menu'); }
+
+  async function boot() {
+    const r = await api('me');
+    currentUser = (r && r.user) || null;
+    if (currentUser) enterApp();
+    else { setAuthMode('login'); goto('auth'); }
+  }
+  boot();
 })();

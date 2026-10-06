@@ -69,8 +69,29 @@
       </div>
     </div>
 
+    <!-- ===================== SIGN IN / SIGN UP ===================== -->
+    <section id="auth" class="screen">
+      <div class="menu-inner auth-inner">
+        <img src="assets/logo_badge.webp" class="brand-emblem" alt="RogerATC" />
+        <div class="logo-text"><span class="logo-main">Roger<span class="accent">ATC</span></span></div>
+        <div class="auth-tabs">
+          <button class="auth-tab active" data-tab="login">Log In</button>
+          <button class="auth-tab" data-tab="signup">Sign Up</button>
+        </div>
+        <form id="authForm" class="auth-form">
+          <input id="authEmail" type="email" placeholder="Email address" autocomplete="email" required />
+          <input id="authPass" type="password" placeholder="Password (min 6 chars)" autocomplete="current-password" minlength="6" required />
+          <div id="authMsg" class="auth-msg"></div>
+          <button id="authSubmit" type="submit" class="primary-btn">LOG IN</button>
+        </form>
+        <div class="auth-or"><span>or</span></div>
+        <button id="googleBtn" class="google-btn"><span class="g">G</span> Continue with Google</button>
+        <button id="guestBtn" class="ghost-btn">Play as Guest</button>
+      </div>
+    </section>
+
     <!-- ===================== START / MENU SCREEN ===================== -->
-    <section id="menu" class="screen">
+    <section id="menu" class="screen hidden">
       <div class="menu-inner">
         <div class="logo-wrap">
           <img src="assets/logo_badge.webp" class="brand-emblem" alt="RogerATC emblem" />
@@ -103,13 +124,14 @@
         <button id="startBtn" class="primary-btn">START FLIGHT ✈</button>
 
         <div class="menu-foot">
-          <button id="menuMute" class="ghost-btn">🔊 Music On</button>
+          <button id="menuMute" class="ghost-btn">🔊 Sound On</button>
           <button id="howToBtn" class="ghost-btn">How to play</button>
+          <button id="logoutBtn" class="ghost-btn hidden">Log out</button>
         </div>
       </div>
 
-      <!-- decorative version pill -->
-      <div class="version-pill">RogerATC • Main Version</div>
+      <!-- account + version pill -->
+      <div class="version-pill"><span id="userPill">RogerATC • Main Version</span></div>
     </section>
 
     <!-- ===================== CALL SIGN SCREEN ===================== -->
