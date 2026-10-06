@@ -389,8 +389,8 @@ kbd {
   right: 0;
   bottom: 150px;
   margin-inline: auto;
-  width: clamp(84px, 22vw, 106px);
-  height: clamp(69px, 18vw, 87px);
+  width: clamp(84px, 10vw, 106px);
+  height: clamp(69px, 6vw, 87px);
   display: flex;
   align-items: center;
   justify-content: center;
