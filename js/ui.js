@@ -48,6 +48,7 @@
     } catch (_) { return { error: 'Could not reach the server.' }; }
   }
   let mpMatch = null;                   // active multiplayer match { code, seed, level, role } or null
+  let pendingJoin = new URLSearchParams(location.search).get('join');   // from an invite link ?join=CODE
 
   /* ---------------------------------------------------------- init */
   Game.init(canvas);
@@ -142,15 +143,22 @@
   });
   $('mpCreateStart').addEventListener('click', () => { Audio.unlock(); Audio.play('click'); Audio.startMusic(); launch(); });
 
-  $('mpJoinForm').addEventListener('submit', async (e) => {
-    e.preventDefault(); Audio.unlock(); Audio.play('click');
-    const code = $('mpJoinCode').value.trim().toUpperCase();
+  async function doJoin(code) {
+    code = (code || '').trim().toUpperCase();
     if (code.length < 4) { mpMsg('Enter the match code.', false); return; }
     mpMsg('Joining…', true);
     const r = await mapi('join', { code });
     if (r.error) { mpMsg(r.error, false); return; }
     mpMatch = { code: r.code, seed: r.seed, level: r.level, role: 'guest' };
     Audio.startMusic(); launch();
+  }
+  $('mpJoinForm').addEventListener('submit', (e) => { e.preventDefault(); Audio.unlock(); Audio.play('click'); doJoin($('mpJoinCode').value); });
+  $('mpCopyLink').addEventListener('click', async () => {
+    Audio.play('click');
+    if (!mpMatch) return;
+    const link = location.origin + location.pathname + '?join=' + mpMatch.code;
+    try { await navigator.clipboard.writeText(link); mpMsg('✅ Invite link copied — send it to a friend!', true); }
+    catch (_) { mpMsg(link, true); }
   });
 
   let mpPoll = null;
@@ -434,7 +442,15 @@
     }
   }
 
-  function enterApp() { updateAccountUI(); goto('menu'); }
+  function enterApp() {
+    updateAccountUI();
+    if (pendingJoin) {                                  // arrived via an invite link
+      const code = pendingJoin; pendingJoin = null;
+      openMultiplayer(); $('mpJoinCode').value = code; doJoin(code);
+      return;
+    }
+    goto('menu');
+  }
 
   async function boot() {
     const r = await api('me');
