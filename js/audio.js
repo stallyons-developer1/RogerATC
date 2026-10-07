@@ -83,6 +83,7 @@ const Audio = (() => {
     cloud()  { tone(520, 0.18, 'triangle', 0.25); noise(0.15, 0.12, 0, 2200, 'highpass'); },
     ching()  { tone(1318, 0.12, 'sine', 0.3); tone(1760, 0.18, 'sine', 0.25, 0.08); }, // money
     bell()   { tone(1046, 0.5, 'sine', 0.3); tone(1568, 0.5, 'sine', 0.2, 0.02); },     // bonus zone
+    crowd()  { noise(0.85, 0.28, 0, 1400, 'bandpass'); noise(0.6, 0.16, 0.1, 2600, 'highpass'); }, // crowd cheer
     jet()    { tone(200, 0.6, 'sawtooth', 0.22, 0, 1200); noise(0.6, 0.18, 0, 3000, 'highpass'); }, // jet stream
     splat()  { noise(0.18, 0.4, 0, 500, 'lowpass'); tone(160, 0.14, 'square', 0.2, 0, 60); }, // bird hit
     poof()   { noise(0.3, 0.3, 0, 700, 'lowpass'); },                   // toxic smoke

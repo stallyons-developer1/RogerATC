@@ -325,8 +325,9 @@ const Game = (() => {
           if (circHit(b, e.x, e.y, e.r * 0.8)) {
             e.dead = true; birdHits++;
             addScore(DATA.score.birdHit, e.x, e.y, 'bad');
+            popups.push({ x: e.x, y: e.y - 26, text: 'BIRD STRIKE!', life: 1.3, kind: 'bad', big: true });
             Audio.play('splat'); burst(e.x, e.y, '#5b4636', 10);
-            if (cb.onChatter) cb.onChatter(pick(['Bird Strike', "It's too many birds!", 'Say Again']), false);
+            if (cb.onChatter) cb.onChatter('Bird Strike', false);
             if (birdHits >= DATA.maxBirdHits) crash('birds');
           }
           break;
@@ -345,7 +346,9 @@ const Game = (() => {
             e.got = true; e.dead = true;
             const kind = e.value >= DATA.score.valley ? 'good' : 'good';
             addScore(e.value, e.x, e.y, kind);
-            Audio.play(e.value >= DATA.score.valley ? 'ching' : 'bell'); burst(e.x, e.y, '#ffd166', 16);
+            Audio.play(e.value >= DATA.score.valley ? 'ching' : 'bell');
+            Audio.play('crowd');                               // authorization zone: bell + crowd (spec)
+            burst(e.x, e.y, '#ffd166', 16);
           }
           break;
         case 'jet':
@@ -723,11 +726,11 @@ const Game = (() => {
 
   function drawPopups() {
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.font = '800 20px Trebuchet MS, sans-serif';
     for (const u of popups) {
       ctx.globalAlpha = clamp(u.life, 0, 1);
-      ctx.fillStyle = u.kind === 'bad' ? '#ff5436' : '#4ade80';
-      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+      ctx.font = (u.big ? '900 26px ' : '800 20px ') + 'Trebuchet MS, sans-serif';
+      ctx.fillStyle = u.big ? '#ff3b3b' : (u.kind === 'bad' ? '#ff5436' : '#4ade80');
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.45)';
       ctx.strokeText(u.text, u.x, u.y); ctx.fillText(u.text, u.x, u.y);
     }
     ctx.globalAlpha = 1;
