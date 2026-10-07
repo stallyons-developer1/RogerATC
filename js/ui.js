@@ -11,7 +11,7 @@
   const hide = (el) => el.classList.add('hidden');
 
   // ---- elements ----
-  const screens = { auth: $('auth'), menu: $('menu'), callsign: $('callsign'), howto: $('howto'), result: $('result'), pause: $('pause') };
+  const screens = { auth: $('auth'), menu: $('menu'), leaderboard: $('leaderboard'), callsign: $('callsign'), howto: $('howto'), result: $('result'), pause: $('pause') };
   const hud = $('hud');
   const canvas = $('game');
 
@@ -94,6 +94,32 @@
   $('howToBtn').addEventListener('click', () => { Audio.play('click'); goto('howto'); });
   $('howBack').addEventListener('click', () => { Audio.play('click'); goto('menu'); });
   $('menuMute').addEventListener('click', () => { Audio.unlock(); const m = Audio.toggleMute(); if (!m) Audio.startMusic(); updateMuteLabels(); });
+
+  /* ---------------------------------------------------------- leaderboard */
+  $('leaderboardBtn').addEventListener('click', () => { Audio.play('click'); openLeaderboard(); });
+  $('lbBack').addEventListener('click', () => { Audio.play('click'); goto('menu'); });
+  function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  async function openLeaderboard() {
+    goto('leaderboard');
+    const list = $('lbList'), meEl = $('lbMe');
+    list.innerHTML = '<div class="lb-empty">Loading…</div>'; hide(meEl);
+    const r = await api('leaderboard');
+    const top = (r && r.top) || [];
+    if (!top.length) {
+      list.innerHTML = '<div class="lb-empty">No scores yet — be the first to fly!</div>';
+    } else {
+      list.innerHTML = '';
+      top.forEach((row, i) => {
+        const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i + 1);
+        const d = document.createElement('div');
+        d.className = 'lb-row' + (i < 3 ? ' top' + (i + 1) : '');
+        d.innerHTML = `<span class="lb-rank">${medal}</span><span class="lb-name">${esc(row.name)}</span><span class="lb-score">${row.score}</span>`;
+        list.appendChild(d);
+      });
+    }
+    if (r && r.me) { meEl.innerHTML = `<span>Your rank: #${r.me.rank}</span><span>${r.me.score} pts</span>`; show(meEl); }
+    else hide(meEl);
+  }
 
   /* ---------------------------------------------------------- call sign picker */
   function buildCallsigns() {
@@ -200,7 +226,7 @@
     const hs = highScore();
     const isBest = scoreVal > hs;
     if (isBest) saveHigh(scoreVal);
-    if (currentUser) api('savescore', { score: scoreVal });   // sync to account
+    if (currentUser) api('savescore', { score: scoreVal, callsign: selectedCallsign === 'NO CALL SIGN' ? null : selectedCallsign });   // sync to account
 
     if (result === 'survived') {
       el.resultTitle.textContent = 'YOU SURVIVED!';

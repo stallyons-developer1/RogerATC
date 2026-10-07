@@ -115,10 +115,32 @@ if ($action === 'logout') {
 // ---------- SAVE HIGH SCORE ----------
 if ($action === 'savescore') {
   if (empty($_SESSION['uid'])) out(['error' => 'Not logged in'], 401);
-  $score = (int) (body()['score'] ?? 0);
+  $b = body();
+  $score = (int) ($b['score'] ?? 0);
+  $cs = isset($b['callsign']) && $b['callsign'] ? substr(trim($b['callsign']), 0, 40) : null;
+  if ($cs) $pdo->prepare('UPDATE users SET callsign = ? WHERE id = ?')->execute([$cs, $_SESSION['uid']]);
   $pdo->prepare('UPDATE users SET high_score = MAX(high_score, ?) WHERE id = ?')
       ->execute([$score, $_SESSION['uid']]);
   out(['ok' => true]);
+}
+
+// ---------- LEADERBOARD ----------
+if ($action === 'leaderboard') {
+  $rows = $pdo->query('SELECT email, callsign, high_score FROM users WHERE high_score > 0
+                       ORDER BY high_score DESC, id ASC LIMIT 20')->fetchAll(PDO::FETCH_ASSOC);
+  $top = array_map(function ($r) {
+    return ['name' => $r['callsign'] ?: explode('@', $r['email'])[0], 'score' => (int) $r['high_score']];
+  }, $rows);
+  $me = null;
+  if (!empty($_SESSION['uid'])) {
+    $q = $pdo->prepare('SELECT high_score FROM users WHERE id = ?');
+    $q->execute([$_SESSION['uid']]);
+    $hs = (int) $q->fetchColumn();
+    $r = $pdo->prepare('SELECT COUNT(*) + 1 FROM users WHERE high_score > ?');
+    $r->execute([$hs]);
+    $me = ['rank' => (int) $r->fetchColumn(), 'score' => $hs];
+  }
+  out(['top' => $top, 'me' => $me]);
 }
 
 out(['error' => 'Unknown action'], 400);

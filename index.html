@@ -124,6 +124,7 @@
         <button id="startBtn" class="primary-btn">START FLIGHT ✈</button>
 
         <div class="menu-foot">
+          <button id="leaderboardBtn" class="ghost-btn">🏆 Ranking</button>
           <button id="menuMute" class="ghost-btn">🔊 Sound On</button>
           <button id="howToBtn" class="ghost-btn">How to play</button>
           <button id="logoutBtn" class="ghost-btn hidden">Log out</button>
@@ -132,6 +133,17 @@
 
       <!-- account + version pill -->
       <div class="version-pill"><span id="userPill">RogerATC • Main Version</span></div>
+    </section>
+
+    <!-- ===================== LEADERBOARD ===================== -->
+    <section id="leaderboard" class="screen hidden">
+      <div class="menu-inner">
+        <h2 class="screen-title">🏆 TOP PILOTS</h2>
+        <p class="screen-sub">Global high scores — top rank wins cash prizes!</p>
+        <div id="lbList" class="lb-list"></div>
+        <div id="lbMe" class="lb-me hidden"></div>
+        <button id="lbBack" class="primary-btn">← Back</button>
+      </div>
     </section>
 
     <!-- ===================== CALL SIGN SCREEN ===================== -->
