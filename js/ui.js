@@ -11,7 +11,7 @@
   const hide = (el) => el.classList.add('hidden');
 
   // ---- elements ----
-  const screens = { auth: $('auth'), menu: $('menu'), leaderboard: $('leaderboard'), callsign: $('callsign'), howto: $('howto'), result: $('result'), pause: $('pause') };
+  const screens = { auth: $('auth'), menu: $('menu'), leaderboard: $('leaderboard'), multiplayer: $('multiplayer'), mpresult: $('mpresult'), callsign: $('callsign'), howto: $('howto'), result: $('result'), pause: $('pause') };
   const hud = $('hud');
   const canvas = $('game');
 
@@ -36,15 +36,18 @@
   let currentUser = null;               // { email, verified, high_score } or null (guest)
   let authMode = 'login';
   const GOOGLE_CLIENT_ID = '';          // <-- client fills this to enable Google sign-in
-  async function api(action, data) {
+  async function api(action, data) { return call('auth.php', action, data); }
+  async function mapi(action, data) { return call('match.php', action, data); }
+  async function call(file, action, data) {
     try {
-      const res = await fetch('api/auth.php?action=' + action, {
+      const res = await fetch('api/' + file + '?action=' + action, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data || {}),
       });
       return await res.json();
     } catch (_) { return { error: 'Could not reach the server.' }; }
   }
+  let mpMatch = null;                   // active multiplayer match { code, seed, level, role } or null
 
   /* ---------------------------------------------------------- init */
   Game.init(canvas);
@@ -64,8 +67,8 @@
     const btn = e.target.closest('.seg-btn'); if (!btn) return;
     Audio.unlock(); Audio.play('click');
     if (btn.dataset.mode === 'multi') {
-      // Multiplayer requires subscription (spec) — gated in main version
-      flash(btn, 'Multiplayer needs a $4.99/mo subscription — Solo is free!');
+      if (!currentUser) { flash(btn, 'Log in to play Multiplayer!'); return; }
+      openMultiplayer();
       return;
     }
     setActive('modeSeg', btn); mode = btn.dataset.mode;
@@ -90,7 +93,7 @@
   }
 
   /* ---------------------------------------------------------- menu buttons */
-  $('startBtn').addEventListener('click', () => { Audio.unlock(); Audio.play('click'); Audio.startMusic(); goto('callsign'); });
+  $('startBtn').addEventListener('click', () => { Audio.unlock(); Audio.play('click'); Audio.startMusic(); mpMatch = null; goto('callsign'); });
   $('howToBtn').addEventListener('click', () => { Audio.play('click'); goto('howto'); });
   $('howBack').addEventListener('click', () => { Audio.play('click'); goto('menu'); });
   $('menuMute').addEventListener('click', () => { Audio.unlock(); const m = Audio.toggleMute(); if (!m) Audio.startMusic(); updateMuteLabels(); });
@@ -121,6 +124,78 @@
     else hide(meEl);
   }
 
+  /* ---------------------------------------------------------- multiplayer */
+  function mpMsg(t, ok) { const e = $('mpMsg'); e.textContent = t || ''; e.className = 'auth-msg' + (t ? (ok ? ' ok' : ' err') : ''); }
+  function openMultiplayer() {
+    mpMatch = null;
+    hide($('mpCreated')); $('mpJoinCode').value = ''; mpMsg('');
+    goto('multiplayer');
+  }
+  $('mpBack').addEventListener('click', () => { Audio.play('click'); mpMatch = null; goto('menu'); });
+
+  $('mpCreate').addEventListener('click', async () => {
+    Audio.unlock(); Audio.play('click'); mpMsg('Creating…', true);
+    const r = await mapi('create', { level });
+    if (r.error) { mpMsg(r.error, false); return; }
+    mpMatch = { code: r.code, seed: r.seed, level: r.level, role: 'host' };
+    $('mpCode').textContent = r.code; show($('mpCreated')); mpMsg('');
+  });
+  $('mpCreateStart').addEventListener('click', () => { Audio.unlock(); Audio.play('click'); Audio.startMusic(); launch(); });
+
+  $('mpJoinForm').addEventListener('submit', async (e) => {
+    e.preventDefault(); Audio.unlock(); Audio.play('click');
+    const code = $('mpJoinCode').value.trim().toUpperCase();
+    if (code.length < 4) { mpMsg('Enter the match code.', false); return; }
+    mpMsg('Joining…', true);
+    const r = await mapi('join', { code });
+    if (r.error) { mpMsg(r.error, false); return; }
+    mpMatch = { code: r.code, seed: r.seed, level: r.level, role: 'guest' };
+    Audio.startMusic(); launch();
+  });
+
+  let mpPoll = null;
+  function mpSubmitAndShow(scoreVal) {
+    const code = mpMatch.code, you = mpMatch.role;
+    mapi('submit', { code, score: scoreVal });
+    $('mpResultTitle').textContent = 'MATCH RESULT';
+    $('mpResultTitle').classList.remove('survived');
+    $('mpYouName').textContent = 'You';
+    $('mpYouAv').textContent = (currentUser && currentUser.email ? currentUser.email[0] : 'Y').toUpperCase();
+    $('mpYouScore').textContent = scoreVal;
+    $('mpOppName').textContent = 'Opponent'; $('mpOppAv').textContent = '?'; $('mpOppScore').textContent = '—';
+    $('mpStatus').textContent = 'Waiting for opponent to finish…';
+    hide($('mpDone'));
+    document.querySelectorAll('.mp-player').forEach((p) => p.classList.remove('winner'));
+    goto('mpresult');
+    clearInterval(mpPoll);
+    const poll = async () => {
+      const s = await mapi('status', { code });
+      if (s.error) { $('mpStatus').textContent = s.error; return; }
+      const opp = you === 'host' ? s.guest : s.host;
+      if (opp) {
+        $('mpOppName').textContent = opp.name;
+        $('mpOppAv').textContent = (opp.name[0] || '?').toUpperCase();
+        $('mpOppScore').textContent = opp.done ? opp.score : '…';
+      }
+      if (s.bothDone) {
+        clearInterval(mpPoll); mpPoll = null;
+        const youWin = s.winner === you, tie = s.winner === 'tie';
+        $('mpResultTitle').textContent = tie ? "IT'S A TIE!" : (youWin ? 'YOU WIN! 🏆' : 'YOU LOST');
+        if (youWin || tie) $('mpResultTitle').classList.add('survived');
+        if (!tie) {
+          const winEl = (youWin ? $('mpYouName') : $('mpOppName')).closest('.mp-player');
+          winEl.classList.add('winner');
+        }
+        $('mpStatus').textContent = tie ? 'Dead heat — same score!' : (youWin ? 'You flew it better! 🏆' : 'Rematch for redemption!');
+        Audio.play(youWin || tie ? 'fireworks' : 'poof');
+        show($('mpDone'));
+      }
+    };
+    poll();
+    mpPoll = setInterval(poll, 2500);
+  }
+  $('mpDone').addEventListener('click', () => { Audio.play('click'); clearInterval(mpPoll); mpPoll = null; mpMatch = null; Game.stop(); goto('menu'); });
+
   /* ---------------------------------------------------------- call sign picker */
   function buildCallsigns() {
     const grid = $('callsignGrid');
@@ -143,17 +218,20 @@
   $('callGo').addEventListener('click', () => { Audio.play('click'); launch(); });
 
   /* ---------------------------------------------------------- launch game */
+  let curLevel = 'regular';
   function launch() {
     goto(null);
     show(hud);
+    curLevel = mpMatch ? mpMatch.level : level;
     const callName = selectedCallsign === 'NO CALL SIGN' ? '' : selectedCallsign;
-    el.callTag.textContent = callName || 'SOLO';
+    el.callTag.textContent = mpMatch ? '⚔ VS' : (callName || 'SOLO');
     el.score.textContent = '0';
     el.best.textContent = highScore();
-    el.timer.textContent = fmtTime(DATA.levels[level]);
+    el.timer.textContent = fmtTime(DATA.levels[curLevel]);
 
     Game.start({
-      duration: DATA.levels[level],
+      duration: DATA.levels[curLevel],
+      seed: mpMatch ? mpMatch.seed : undefined,
       callsign: callName,
       callbacks: {
         onScore: (v, kind) => {
@@ -180,7 +258,7 @@
   /* ---------------------------------------------------------- timer display */
   let timerRAF = null;
   function startTimerDisplay() {
-    const dur = DATA.levels[level];
+    const dur = DATA.levels[curLevel];
     const t0 = performance.now();
     cancelAnimationFrame(timerRAF);
     const tick = () => {
@@ -227,6 +305,7 @@
     const isBest = scoreVal > hs;
     if (isBest) saveHigh(scoreVal);
     if (currentUser) api('savescore', { score: scoreVal, callsign: selectedCallsign === 'NO CALL SIGN' ? null : selectedCallsign });   // sync to account
+    if (mpMatch) { mpSubmitAndShow(scoreVal); return; }   // multiplayer -> match result
 
     if (result === 'survived') {
       el.resultTitle.textContent = 'YOU SURVIVED!';

@@ -280,6 +280,28 @@ html, body {
   display: flex; justify-content: space-between; box-shadow: 0 6px 16px rgba(255,122,77,0.4);
 }
 
+/* ===================== MULTIPLAYER ===================== */
+.mp-created { width: 100%; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.mp-share { color: rgba(255,255,255,0.85); font-size: 14px; font-weight: 700; }
+.mp-code {
+  font-size: clamp(32px, 9vw, 46px); font-weight: 900; letter-spacing: 8px;
+  color: var(--gold); background: rgba(0,0,0,0.25); border: 2px dashed var(--gold);
+  border-radius: 14px; padding: 12px 20px; width: 100%; text-align: center;
+}
+#mpJoinCode { text-transform: uppercase; letter-spacing: 6px; text-align: center; font-weight: 900; }
+.mp-scores { display: flex; align-items: center; justify-content: center; gap: 18px; width: 100%; }
+.mp-player { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; }
+.mp-av {
+  width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 28px; font-weight: 900; color: #fff;
+  background: linear-gradient(135deg, var(--sunset-1), var(--sunset-3)); border: 3px solid rgba(255,255,255,0.7);
+}
+.mp-player span { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.85); max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mp-player b { font-size: 30px; font-weight: 900; color: var(--gold); }
+.mp-player.winner .mp-av { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(255,209,102,0.4); }
+.mp-player.winner b { color: var(--good); }
+.mp-vs { font-size: 18px; font-weight: 900; color: rgba(255,255,255,0.6); }
+
 /* ===================== CALL SIGN GRID ===================== */
 .screen-title {
   font-size: clamp(24px, 6.5vw, 36px);

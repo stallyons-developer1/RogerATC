@@ -146,6 +146,43 @@
       </div>
     </section>
 
+    <!-- ===================== MULTIPLAYER ===================== -->
+    <section id="multiplayer" class="screen hidden">
+      <div class="menu-inner">
+        <h2 class="screen-title">⚔️ MULTIPLAYER</h2>
+        <p class="screen-sub">Same course — highest score wins!</p>
+        <button id="mpCreate" class="primary-btn">Create Match</button>
+        <div id="mpCreated" class="mp-created hidden">
+          <p class="mp-share">Share this code with a friend:</p>
+          <div id="mpCode" class="mp-code">------</div>
+          <button id="mpCreateStart" class="primary-btn">START FLIGHT ✈</button>
+        </div>
+        <div class="auth-or"><span>or join a friend</span></div>
+        <form id="mpJoinForm" class="auth-form">
+          <input id="mpJoinCode" placeholder="Enter match code" maxlength="6" autocapitalize="characters" />
+          <button type="submit" class="google-btn">Join Match</button>
+        </form>
+        <div id="mpMsg" class="auth-msg"></div>
+        <button id="mpBack" class="ghost-btn">← Back</button>
+      </div>
+    </section>
+
+    <!-- ===================== MATCH RESULT ===================== -->
+    <section id="mpresult" class="screen hidden">
+      <div class="menu-inner">
+        <h2 id="mpResultTitle" class="result-title">MATCH RESULT</h2>
+        <div class="mp-scores">
+          <div class="mp-player"><div class="mp-av" id="mpYouAv">Y</div><span id="mpYouName">You</span><b id="mpYouScore">—</b></div>
+          <div class="mp-vs">VS</div>
+          <div class="mp-player"><div class="mp-av" id="mpOppAv">?</div><span id="mpOppName">Opponent</span><b id="mpOppScore">—</b></div>
+        </div>
+        <div id="mpStatus" class="screen-sub">Waiting for opponent to finish…</div>
+        <div class="result-actions">
+          <button id="mpDone" class="primary-btn hidden">Main Menu</button>
+        </div>
+      </div>
+    </section>
+
     <!-- ===================== CALL SIGN SCREEN ===================== -->
     <section id="callsign" class="screen hidden">
       <div class="menu-inner">
