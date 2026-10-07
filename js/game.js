@@ -29,15 +29,28 @@ const Game = (() => {
   let scroll, scrollSpeed, bgScroll;
 
   // run stats
-  let score, birdHits, duration, elapsed, timeLeft;
+  let score, birdHits, duration, elapsed, timeLeft, waveCount;
   let speedMph, speedTick, chatterTick, spawnGap, sunGlow;
   let floorCool, crashing, crashTime;
   let callsign = '';
 
-  const rand = (a, b) => a + Math.random() * (b - a);
+  const rand = (a, b) => a + Math.random() * (b - a);         // cosmetic (particles, decor, chatter)
   const randi = (a, b) => Math.floor(rand(a, b + 1));
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+
+  // ---- seeded RNG — used ONLY for terrain so a shared seed = identical course (multiplayer) ----
+  let _seed = 1, currentSeed = 1;
+  function seedRng(s) { _seed = (s >>> 0) || 1; }
+  function _next() {                                           // mulberry32
+    _seed = (_seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(_seed ^ (_seed >>> 15), 1 | _seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  const srand = (a, b) => a + _next() * (b - a);
+  const srandi = (a, b) => Math.floor(srand(a, b + 1));
+  const spick = (arr) => arr[Math.floor(_next() * arr.length)];
 
   /* ---------------------------------------------------------- setup */
   function init(cvs) {
@@ -80,6 +93,8 @@ const Game = (() => {
     duration = opts.duration;
     callsign = opts.callsign || '';
     cb = opts.callbacks || {};
+    currentSeed = opts.seed || (Math.floor(Math.random() * 1e9) + 1);
+    seedRng(currentSeed);                                      // same seed => same terrain
 
     plane = { x: W * 0.28, y: H * 0.45, vy: 0, angle: 0, size: 26, dead: false };
     entities = [];
@@ -89,7 +104,7 @@ const Game = (() => {
 
     scroll = 0; bgScroll = 0;
     scrollSpeed = 210;
-    score = 0; birdHits = 0; elapsed = 0; timeLeft = duration;
+    score = 0; birdHits = 0; elapsed = 0; timeLeft = duration; waveCount = 0;
     speedMph = DATA.speed.min; speedTick = 0; chatterTick = 1.2;
     spawnGap = 1.0; sunGlow = 0;
     floorCool = 0; crashing = false; crashTime = 0;
@@ -191,7 +206,12 @@ const Game = (() => {
     // ---- spawning ----
     if (!crashing) {
       spawnGap -= dt;
-      if (spawnGap <= 0) { spawnWave(prog); spawnGap = rand(0.75, 1.35) * (1 - prog * 0.25); }
+      if (spawnGap <= 0) {
+        waveCount++;
+        const sprog = Math.min(1, waveCount / 80);            // deterministic difficulty (not time-based)
+        spawnWave(sprog);
+        spawnGap = srand(0.75, 1.35) * (1 - sprog * 0.25);
+      }
     }
 
     // ---- entities ----
@@ -238,27 +258,27 @@ const Game = (() => {
   /* ---------------------------------------------------------- spawning */
   function spawnWave(prog) {
     // weighted pick — birds are the "nightmare" (everywhere), big rewards rare
-    const roll = Math.random();
+    const roll = _next();
     if (roll < 0.34) spawnBirds(prog);
     else if (roll < 0.46) spawnCloud();
     else if (roll < 0.58) spawnBonus(DATA.score.bonusZone, '+100');
     else if (roll < 0.68) spawnMountain();
     else if (roll < 0.77) spawnTower();
     else if (roll < 0.85) spawnSmokeStack();
-    else if (roll < 0.90) spawnBonus(pick([DATA.score.peak, DATA.score.valley]), null);
+    else if (roll < 0.90) spawnBonus(spick([DATA.score.peak, DATA.score.valley]), null);
     else if (roll < 0.965) spawnBigBird();
     else spawnJetStream();
   }
 
-  const airY = () => rand(ceilingY + 40, floorY - 50);
+  const airY = () => srand(ceilingY + 40, floorY - 50);
 
   function spawnBirds(prog) {
-    const n = randi(1, 3 + Math.floor(prog * 2));
+    const n = srandi(1, 3 + Math.floor(prog * 2));
     const baseY = airY();
     for (let i = 0; i < n; i++) {
       entities.push({
-        type: 'bird', x: W + 40 + i * rand(40, 80), y: baseY + rand(-40, 40),
-        r: 13, wing: rand(0, 6.28), vyWave: rand(0.6, 1.4), phase: rand(0, 6.28), baseY: baseY + rand(-40, 40),
+        type: 'bird', x: W + 40 + i * srand(40, 80), y: baseY + srand(-40, 40),
+        r: 13, wing: srand(0, 6.28), vyWave: srand(0.6, 1.4), phase: srand(0, 6.28), baseY: baseY + srand(-40, 40),
         update: (e, dt) => { e.wing += dt * 12; e.phase += dt * e.vyWave; e.y = e.baseY + Math.sin(e.phase) * 16; },
       });
     }
@@ -267,41 +287,41 @@ const Game = (() => {
   function spawnBigBird() {
     const y = airY();
     entities.push({
-      type: 'bigbird', x: W + 50, y, r: 26, wing: 0, baseY: y, phase: rand(0, 6.28),
+      type: 'bigbird', x: W + 50, y, r: 26, wing: 0, baseY: y, phase: srand(0, 6.28),
       update: (e, dt) => { e.wing += dt * 8; e.phase += dt * 0.9; e.y = e.baseY + Math.sin(e.phase) * 22; },
     });
   }
 
   function spawnCloud() {
-    entities.push({ type: 'cloud', x: W + 40, y: airY(), r: rand(26, 40), got: false });
+    entities.push({ type: 'cloud', x: W + 40, y: airY(), r: srand(26, 40), got: false });
   }
 
   function spawnBonus(value, label) {
-    const h = rand(90, 150);                     // zones vary in height (spec)
+    const h = srand(90, 150);                     // zones vary in height (spec)
     const y = clamp(airY(), ceilingY + h / 2 + 10, floorY - h / 2 - 10);
     entities.push({ type: 'bonus', x: W + 40, y, w: 46, h, value, label: label || ('+' + value), got: false, pulse: 0,
       update: (e, dt) => { e.pulse += dt * 3; } });
   }
 
   function spawnMountain() {
-    const h = rand(H * 0.26, H * 0.48);
+    const h = srand(H * 0.26, H * 0.48);
     entities.push({ type: 'mountain', x: W + 40, h, w: h * mtnAspect });
   }
 
   function spawnTower() {
-    entities.push({ type: 'tower', x: W + 40, w: rand(34, 52), h: rand(H * 0.18, H * 0.42) });
+    entities.push({ type: 'tower', x: W + 40, w: srand(34, 52), h: srand(H * 0.18, H * 0.42) });
   }
 
   function spawnSmokeStack() {
-    const h = rand(H * 0.16, H * 0.3);
-    const toxic = rand(H * 0.18, H * 0.4);      // toxic smoke can stretch halfway up
-    entities.push({ type: 'stack', x: W + 40, w: rand(26, 40), h, toxic, got: false, puff: 0,
+    const h = srand(H * 0.16, H * 0.3);
+    const toxic = srand(H * 0.18, H * 0.4);      // toxic smoke can stretch halfway up
+    entities.push({ type: 'stack', x: W + 40, w: srand(26, 40), h, toxic, got: false, puff: 0,
       update: (e, dt) => { e.puff += dt; } });
   }
 
   function spawnJetStream() {
     const y = clamp(airY(), ceilingY + 60, floorY - 60);
-    entities.push({ type: 'jet', x: W + 60, w: rand(220, 320), h: 54, y, got: false, par: 0.9, dash: 0,
+    entities.push({ type: 'jet', x: W + 60, w: srand(220, 320), h: 54, y, got: false, par: 0.9, dash: 0,
       update: (e, dt) => { e.dash += dt * 600; } });
   }
 
@@ -797,7 +817,7 @@ const Game = (() => {
   }
 
   return {
-    init, start, pause, resume, stop, lift, getState: () => state,
+    init, start, pause, resume, stop, lift, getState: () => state, getSeed: () => currentSeed,
     _debug: () => ({ state, score, birdHits, timeLeft, entities: entities ? entities.length : 0,
       types: entities ? entities.reduce((a, e) => { a[e.type] = (a[e.type] || 0) + 1; return a; }, {}) : {},
       planeY: plane ? Math.round(plane.y) : null, planeX: plane ? Math.round(plane.x) : null, crashing,
