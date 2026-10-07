@@ -24,5 +24,18 @@ function db() {
     high_score   INTEGER DEFAULT 0,
     created_at   TEXT DEFAULT CURRENT_TIMESTAMP
   )');
+  $pdo->exec('CREATE TABLE IF NOT EXISTS matches (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    code        TEXT UNIQUE NOT NULL,
+    seed        INTEGER NOT NULL,
+    level       TEXT DEFAULT "regular",
+    host_id     INTEGER NOT NULL,
+    guest_id    INTEGER,
+    host_score  INTEGER DEFAULT 0,
+    guest_score INTEGER DEFAULT 0,
+    host_done   INTEGER DEFAULT 0,
+    guest_done  INTEGER DEFAULT 0,
+    created_at  TEXT DEFAULT CURRENT_TIMESTAMP
+  )');
   return $pdo;
 }
