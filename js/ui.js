@@ -11,7 +11,7 @@
   const hide = (el) => el.classList.add('hidden');
 
   // ---- elements ----
-  const screens = { auth: $('auth'), menu: $('menu'), leaderboard: $('leaderboard'), multiplayer: $('multiplayer'), mpresult: $('mpresult'), subscribe: $('subscribe'), callsign: $('callsign'), howto: $('howto'), result: $('result'), pause: $('pause') };
+  const screens = { auth: $('auth'), menu: $('menu'), leaderboard: $('leaderboard'), multiplayer: $('multiplayer'), mpresult: $('mpresult'), subscribe: $('subscribe'), messages: $('messages'), callsign: $('callsign'), howto: $('howto'), result: $('result'), pause: $('pause') };
   const hud = $('hud');
   const canvas = $('game');
 
@@ -40,6 +40,7 @@
   async function api(action, data) { return call('auth.php', action, data); }
   async function mapi(action, data) { return call('match.php', action, data); }
   async function payapi(action, data) { return call('pay.php', action, data); }
+  async function msgapi(action, data) { return call('msg.php', action, data); }
   async function call(file, action, data) {
     try {
       const res = await fetch('api/' + file + '?action=' + action, {
@@ -221,6 +222,71 @@
   }
   $('subBack').addEventListener('click', () => { Audio.play('click'); goto('menu'); });
   $('premiumBtn').addEventListener('click', () => { Audio.play('click'); if (!currentUser) { setAuthMode('login'); goto('auth'); return; } openSubscribe(); });
+
+  /* ---------------------------------------------------------- messaging */
+  let msgPollTimer = null, convoWith = null, convoPollTimer = null, heartbeatTimer = null;
+  function startHeartbeat() {
+    if (heartbeatTimer || !currentUser) return;
+    msgapi('ping');
+    heartbeatTimer = setInterval(() => { if (currentUser) msgapi('ping'); }, 40000);
+  }
+  $('messagesBtn').addEventListener('click', () => { Audio.play('click'); if (!currentUser) { setAuthMode('login'); goto('auth'); return; } openMessages(); });
+  $('msgBack').addEventListener('click', () => { Audio.play('click'); stopMsgPolling(); goto('menu'); });
+  $('msgConvoBack').addEventListener('click', () => { Audio.play('click'); closeConvo(); });
+  function stopMsgPolling() { clearInterval(msgPollTimer); clearInterval(convoPollTimer); msgPollTimer = convoPollTimer = null; convoWith = null; }
+  function openMessages() {
+    hide($('msgConvo')); show($('msgPlayers')); goto('messages');
+    loadPlayers();
+    clearInterval(msgPollTimer);
+    msgPollTimer = setInterval(() => { if (!convoWith) loadPlayers(); }, 8000);
+  }
+  async function loadPlayers() {
+    const r = await msgapi('players');
+    const list = $('msgPlayers'), players = (r && r.players) || [];
+    if (!players.length) { list.innerHTML = '<div class="msg-empty">No other players yet. Invite friends to join!</div>'; return; }
+    list.innerHTML = '';
+    players.forEach((p) => {
+      const row = document.createElement('div');
+      row.className = 'msg-player-row';
+      row.innerHTML = `<div class="msg-av">${esc((p.name[0] || '?').toUpperCase())}</div><span class="msg-name">${esc(p.name)}</span><span class="msg-dot ${p.online ? 'online' : ''}"></span>`;
+      row.addEventListener('click', () => { Audio.play('click'); openConvo(p.id, p.name); });
+      list.appendChild(row);
+    });
+  }
+  function openConvo(id, name) {
+    convoWith = id; $('msgWith').textContent = name;
+    hide($('msgPlayers')); show($('msgConvo')); $('msgList').innerHTML = '';
+    loadConvo();
+    clearInterval(convoPollTimer); convoPollTimer = setInterval(loadConvo, 3000);
+  }
+  function closeConvo() {
+    clearInterval(convoPollTimer); convoPollTimer = null; convoWith = null;
+    hide($('msgConvo')); show($('msgPlayers')); loadPlayers();
+  }
+  async function loadConvo() {
+    if (!convoWith) return;
+    const r = await msgapi('conversation', { with: convoWith });
+    if (r.error) return;
+    $('msgDot').className = 'msg-dot ' + (r.online ? 'online' : '');
+    const listEl = $('msgList');
+    const atBottom = listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight < 50;
+    listEl.innerHTML = '';
+    (r.messages || []).forEach((m) => {
+      const bub = document.createElement('div');
+      bub.className = 'msg-bubble ' + (m.mine ? 'mine' : 'theirs');
+      bub.textContent = m.body;
+      listEl.appendChild(bub);
+    });
+    if (atBottom) listEl.scrollTop = listEl.scrollHeight;
+  }
+  $('msgForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = $('msgInput'), text = input.value.trim();
+    if (!text || !convoWith) return;
+    input.value = '';
+    await msgapi('send', { to: convoWith, body: text });
+    loadConvo();
+  });
   document.querySelectorAll('#subscribe .plan-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
       Audio.play('click');
@@ -498,10 +564,11 @@
 
   $('logoutBtn').addEventListener('click', async () => {
     Audio.play('click');
+    clearInterval(heartbeatTimer); heartbeatTimer = null;
     await api('logout');
     currentUser = null;
     updateAccountUI();
-    goto('auth');
+    setAuthMode('login'); goto('auth');
   });
 
   function updateAccountUI() {
@@ -511,6 +578,7 @@
       show($('logoutBtn'));
       if (currentUser.high_score && currentUser.high_score > highScore()) saveHigh(currentUser.high_score);
       el.best.textContent = highScore();
+      startHeartbeat();
     } else {
       pill.textContent = 'Guest • RogerATC';
       hide($('logoutBtn'));

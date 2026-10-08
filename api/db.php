@@ -24,10 +24,17 @@ function db() {
     high_score   INTEGER DEFAULT 0,
     created_at   TEXT DEFAULT CURRENT_TIMESTAMP
   )');
-  // migrations for existing DBs — add subscription flags if missing
-  foreach (['sub_multiplayer', 'sub_adfree'] as $col) {
-    try { $pdo->exec("ALTER TABLE users ADD COLUMN $col INTEGER DEFAULT 0"); } catch (Exception $e) {}
+  // migrations for existing DBs
+  foreach (['sub_multiplayer INTEGER DEFAULT 0', 'sub_adfree INTEGER DEFAULT 0', 'last_seen TEXT'] as $def) {
+    try { $pdo->exec("ALTER TABLE users ADD COLUMN $def"); } catch (Exception $e) {}
   }
+  $pdo->exec('CREATE TABLE IF NOT EXISTS messages (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    from_id    INTEGER NOT NULL,
+    to_id      INTEGER NOT NULL,
+    body       TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )');
   $pdo->exec('CREATE TABLE IF NOT EXISTS matches (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     code        TEXT UNIQUE NOT NULL,

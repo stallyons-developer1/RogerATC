@@ -325,6 +325,36 @@ html, body {
 }
 .ad-label { font-size: 11px; letter-spacing: 2px; color: rgba(255,255,255,0.45); font-weight: 700; }
 
+/* ===================== MESSAGES ===================== */
+.msg-inner { width: min(460px, 100%); }
+.msg-players { width: 100%; max-height: 54vh; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
+  padding: 6px; border-radius: 16px; background: rgba(0,0,0,0.15); border: 1px solid var(--glass-brd); }
+.msg-players::-webkit-scrollbar { width: 8px; } .msg-players::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 8px; }
+.msg-player-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px;
+  background: var(--glass-bg); border: 1px solid var(--glass-brd); cursor: pointer; font-weight: 700; color: #fff; transition: background 0.14s; }
+.msg-player-row:hover { background: rgba(255,255,255,0.2); }
+.msg-player-row .msg-av { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; color: #fff;
+  background: linear-gradient(135deg, var(--sunset-1), var(--sunset-3)); font-size: 16px; }
+.msg-player-row .msg-name { flex: 1; text-align: left; }
+.msg-dot { width: 11px; height: 11px; border-radius: 50%; background: rgba(255,255,255,0.3); }
+.msg-dot.online { background: var(--good); box-shadow: 0 0 8px var(--good); }
+.msg-empty { color: rgba(255,255,255,0.7); padding: 20px; font-size: 14px; }
+.msg-convo { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.msg-convo-head { display: flex; align-items: center; gap: 10px; }
+.msg-convo-head .ghost-btn { padding: 8px 14px; }
+.msg-convo-head span#msgWith { font-weight: 900; font-size: 17px; color: #fff; }
+.msg-list { width: 100%; height: 44vh; overflow-y: auto; display: flex; flex-direction: column; gap: 7px;
+  padding: 10px; border-radius: 14px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-brd); }
+.msg-list::-webkit-scrollbar { width: 8px; } .msg-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 8px; }
+.msg-bubble { max-width: 78%; padding: 9px 13px; border-radius: 14px; font-size: 14px; font-weight: 600; line-height: 1.35; word-wrap: break-word; }
+.msg-bubble.theirs { align-self: flex-start; background: rgba(255,255,255,0.9); color: #2a1a3e; border-bottom-left-radius: 4px; }
+.msg-bubble.mine { align-self: flex-end; background: linear-gradient(135deg, var(--sunset-1), var(--sunset-2)); color: #fff; border-bottom-right-radius: 4px; }
+.msg-form { display: flex; gap: 8px; width: 100%; }
+.msg-form input { flex: 1; padding: 13px 16px; border-radius: 13px; border: 1px solid var(--glass-brd);
+  background: rgba(255,255,255,0.12); color: #fff; font-family: var(--font); font-size: 15px; font-weight: 600; outline: none; }
+.msg-form input::placeholder { color: rgba(255,255,255,0.6); }
+.msg-form .primary-btn { width: auto; padding: 13px 22px; }
+
 /* ===================== CALL SIGN GRID ===================== */
 .screen-title {
   font-size: clamp(24px, 6.5vw, 36px);
