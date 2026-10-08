@@ -307,8 +307,8 @@ const Game = (() => {
   function spawnBigBird() {
     const y = airY();
     entities.push({
-      type: 'bigbird', x: W + 50, y, r: 34, wing: 0, baseY: y, phase: srand(0, 6.28),
-      update: (e, dt) => { e.wing += dt * 9; e.phase += dt * 0.9; e.y = e.baseY + Math.sin(e.phase) * 22; },
+      type: 'bigbird', x: W + 50, y, r: 28, wing: 0, baseY: y, phase: srand(0, 6.28), par: 1.7,
+      update: (e, dt) => { e.wing += dt * 11; e.phase += dt * 0.9; e.y = e.baseY + Math.sin(e.phase) * 22; },
     });
   }
 
@@ -618,7 +618,7 @@ const Game = (() => {
     if (big && eagleReady) {
       const fw = eagleImg.width / EAGLE_FRAMES;
       const fi = Math.floor(e.wing * 1.4) % EAGLE_FRAMES;
-      const dh = r * 4.6, dw = dh * (fw / eagleImg.height);   // a bit bigger than small birds
+      const dh = r * 3.6, dw = dh * (fw / eagleImg.height);   // bigger than small birds, not huge
       ctx.drawImage(eagleImg, fi * fw, 0, fw, eagleImg.height, e.x - dw / 2, e.y - dh / 2, dw, dh);
       return;
     }
