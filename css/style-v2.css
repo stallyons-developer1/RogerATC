@@ -355,6 +355,26 @@ html, body {
 .msg-form input::placeholder { color: rgba(255,255,255,0.6); }
 .msg-form .primary-btn { width: auto; padding: 13px 22px; }
 
+/* ===================== BREEZE (blue free variant) ===================== */
+body.breeze { --sunset-1: #38bdf8; --sunset-2: #2563eb; --accent: #0ea5e9; }
+body.breeze .screen {
+  background:
+    linear-gradient(180deg, rgba(8,24,54,0.5) 0%, rgba(8,24,54,0.2) 45%, rgba(8,30,70,0.55) 100%),
+    url('../assets/breeze/bg_breeze.webp') center/cover no-repeat;
+}
+.breeze-mascot {
+  position: absolute; bottom: 64px; left: 10px; width: clamp(68px, 17vw, 108px);
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,0.45)); z-index: 5; pointer-events: none;
+  animation: mascotBob 3s ease-in-out infinite;
+}
+@keyframes mascotBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+.breeze-footer { position: absolute; bottom: 8px; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 0 10px; }
+.breeze-links { display: flex; flex-wrap: wrap; gap: 5px 14px; justify-content: center; }
+.breeze-links a { color: rgba(255,255,255,0.88); font-size: 12px; font-weight: 700; text-decoration: none; }
+.breeze-links a:hover { color: #fff; text-decoration: underline; }
+.breeze-powered { display: flex; align-items: center; gap: 6px; font-size: 10px; letter-spacing: 1px; color: rgba(255,255,255,0.65); font-weight: 700; }
+.breeze-powered img { height: 22px; border-radius: 4px; }
+
 /* ===================== CALL SIGN GRID ===================== */
 .screen-title {
   font-size: clamp(24px, 6.5vw, 36px);

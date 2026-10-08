@@ -10,7 +10,9 @@ const Game = (() => {
   let state = 'idle';                 // idle | running | paused | over
   let raf = 0, last = 0;
   let cb = {};                        // callbacks from UI
-  let bgImg = null, bgReady = false;  // sunset background photo
+  let bgImg = null, bgReady = false;  // background photo
+  const breezeMode = !!window.BREEZE; // Breeze variant: blue theme + Breeze plane
+  let planeImg = null, planeReady = false, planeAspect = 3.4;
   let palmImgs = [], palmReady = false; // real palm silhouette sprites
   let mtnImg = null, mtnReady = false, mtnAspect = 0.924; // realistic rock peak
   let windT = 0;                      // wind animation clock
@@ -58,7 +60,12 @@ const Game = (() => {
     ctx = canvas.getContext('2d');
     bgImg = new Image();
     bgImg.onload = () => { bgReady = true; if (state === 'idle') drawIdleBackdrop(); };
-    bgImg.src = 'assets/bg_sunset.webp';
+    bgImg.src = breezeMode ? 'assets/breeze/bg_breeze.webp' : 'assets/bg_sunset.webp';
+    if (breezeMode) {                                   // real Breeze plane sprite
+      planeImg = new Image();
+      planeImg.onload = () => { planeReady = true; planeAspect = planeImg.width / planeImg.height; };
+      planeImg.src = 'assets/breeze/plane_breeze.webp';
+    }
     // real palm silhouettes (wind-animated)
     ['assets/palm.webp', 'assets/palm2.webp'].forEach((src, i) => {
       const img = new Image();
@@ -758,6 +765,17 @@ const Game = (() => {
 
   function drawPlane() {
     const s = plane.size;
+    if (breezeMode && planeReady) {                     // real Breeze jet sprite
+      const w = s * 2.9, h = w / planeAspect;
+      ctx.save();
+      ctx.translate(plane.x, plane.y);
+      ctx.rotate(plane.angle);
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
+      ctx.beginPath(); ctx.ellipse(2, h * 0.5, w * 0.4, h * 0.35, 0, 0, 6.28); ctx.fill();
+      ctx.drawImage(planeImg, -w / 2, -h / 2, w, h);
+      ctx.restore();
+      return;
+    }
     ctx.save();
     ctx.translate(plane.x, plane.y);
     ctx.rotate(plane.angle);

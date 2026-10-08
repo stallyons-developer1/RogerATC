@@ -32,6 +32,7 @@
   const highScore = () => parseInt(localStorage.getItem(HS_KEY) || '0', 10);
   const saveHigh = (v) => localStorage.setItem(HS_KEY, String(v));
 
+  const BREEZE = !!window.BREEZE;       // Breeze free variant: no ranking, no subscriptions, MP free
   // ---- auth ----
   let currentUser = null;               // { email, verified, high_score } or null (guest)
   let authMode = 'login';
@@ -59,6 +60,7 @@
   buildCallsigns();
   updateMuteLabels();
   loadConfig();
+  if (BREEZE) { hide($('leaderboardBtn')); hide($('premiumBtn')); }   // free, no ranking
 
   /* ---------------------------------------------------------- screen helpers */
   function goto(name) {
@@ -73,7 +75,7 @@
     Audio.unlock(); Audio.play('click');
     if (btn.dataset.mode === 'multi') {
       if (!currentUser) { flash(btn, 'Log in to play Multiplayer!'); return; }
-      if (!currentUser.sub_multiplayer) { openSubscribe(); return; }   // $4.99/mo gate (spec)
+      if (!BREEZE && !currentUser.sub_multiplayer) { openSubscribe(); return; }   // $4.99/mo gate (RogerATC only)
       openMultiplayer();
       return;
     }
