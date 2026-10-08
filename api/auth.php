@@ -1,6 +1,7 @@
 <?php
 // RogerATC auth API — email signup/login with verification, sessions, high-score sync.
 require __DIR__ . '/db.php';
+require __DIR__ . '/config.php';
 
 session_set_cookie_params([
   'lifetime' => 60 * 60 * 24 * 30,
@@ -76,6 +77,27 @@ if ($action === 'login') {
   $u = $stmt->fetch(PDO::FETCH_ASSOC);
   if (!$u || !$u['pass_hash'] || !password_verify($pass, $u['pass_hash'])) {
     out(['error' => 'Wrong email or password.'], 401);
+  }
+  $_SESSION['uid'] = (int) $u['id'];
+  out(['ok' => true, 'user' => publicUser($u)]);
+}
+
+// ---------- GOOGLE SIGN-IN (verify GIS ID token) ----------
+if ($action === 'google') {
+  $cred = body()['credential'] ?? '';
+  if (!$cred) out(['error' => 'No Google credential received.'], 400);
+  $resp = @file_get_contents('https://oauth2.googleapis.com/tokeninfo?id_token=' . urlencode($cred));
+  if (!$resp) out(['error' => 'Could not verify with Google.'], 401);
+  $info = json_decode($resp, true);
+  $cid  = secrets()['google_client_id'] ?? '';
+  if (!$info || !isset($info['aud']) || $info['aud'] !== $cid) out(['error' => 'Invalid Google token.'], 401);
+  $email = strtolower($info['email'] ?? '');
+  if (!$email) out(['error' => 'Google account has no email.'], 401);
+  $q = $pdo->prepare('SELECT * FROM users WHERE email = ?'); $q->execute([$email]);
+  $u = $q->fetch(PDO::FETCH_ASSOC);
+  if (!$u) {
+    $pdo->prepare('INSERT INTO users (email, provider, verified) VALUES (?, "google", 1)')->execute([$email]);
+    $q->execute([$email]); $u = $q->fetch(PDO::FETCH_ASSOC);
   }
   $_SESSION['uid'] = (int) $u['id'];
   out(['ok' => true, 'user' => publicUser($u)]);

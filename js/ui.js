@@ -35,7 +35,8 @@
   // ---- auth ----
   let currentUser = null;               // { email, verified, high_score } or null (guest)
   let authMode = 'login';
-  const GOOGLE_CLIENT_ID = '';          // <-- client fills this to enable Google sign-in
+  let GOOGLE_CLIENT_ID = '';            // loaded from api/pubconfig.php
+  let STRIPE_PK = '';
   async function api(action, data) { return call('auth.php', action, data); }
   async function mapi(action, data) { return call('match.php', action, data); }
   async function call(file, action, data) {
@@ -55,6 +56,7 @@
   el.best.textContent = highScore();
   buildCallsigns();
   updateMuteLabels();
+  loadConfig();
 
   /* ---------------------------------------------------------- screen helpers */
   function goto(name) {
@@ -414,12 +416,42 @@
 
   $('googleBtn').addEventListener('click', () => {
     Audio.play('click');
-    if (!GOOGLE_CLIENT_ID) {
-      authMsg('Google sign-in needs the client’s OAuth Client ID (see README).', false);
+    if (!GOOGLE_CLIENT_ID) { authMsg('Google sign-in is being set up.', false); return; }
+    initGoogle();   // (button normally renders itself; this is a fallback)
+  });
+
+  // ---- public config + Google Identity Services ----
+  async function loadConfig() {
+    try {
+      const c = await (await fetch('api/pubconfig.php')).json();
+      GOOGLE_CLIENT_ID = c.google_client_id || '';
+      STRIPE_PK = c.stripe_pub || '';
+    } catch (_) {}
+    initGoogle();
+  }
+  function onGoogleCredential(resp) {
+    (async () => {
+      authMsg('Signing in with Google…', true);
+      const r = await api('google', { credential: resp.credential });
+      if (r.error) { authMsg(r.error, false); return; }
+      currentUser = r.user; enterApp();
+    })();
+  }
+  let _gsiTries = 0;
+  function initGoogle() {
+    if (!GOOGLE_CLIENT_ID) return;
+    if (!(window.google && window.google.accounts && google.accounts.id)) {
+      if (_gsiTries++ < 30) setTimeout(initGoogle, 300);     // wait for the GIS script to load
       return;
     }
-    // Google Identity Services flow goes here once GOOGLE_CLIENT_ID is set.
-  });
+    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleCredential });
+    const c = $('gsiButton');
+    if (c) {
+      c.innerHTML = '';
+      google.accounts.id.renderButton(c, { theme: 'filled_blue', size: 'large', shape: 'pill', text: 'continue_with', width: 300 });
+      hide($('googleBtn'));
+    }
+  }
 
   $('logoutBtn').addEventListener('click', async () => {
     Audio.play('click');

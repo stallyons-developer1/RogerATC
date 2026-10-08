@@ -10,6 +10,7 @@
   <link rel="preload" as="image" href="assets/bg_sunset.webp" />
   <link rel="preload" as="image" href="assets/logo_badge.webp" />
   <link rel="stylesheet" href="css/style-v2.css" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
   <div id="app">
@@ -85,6 +86,7 @@
           <button id="authSubmit" type="submit" class="primary-btn">LOG IN</button>
         </form>
         <div class="auth-or"><span>or</span></div>
+        <div id="gsiButton" class="gsi-wrap"></div>
         <button id="googleBtn" class="google-btn"><span class="g">G</span> Continue with Google</button>
         <button id="guestBtn" class="ghost-btn">Play as Guest</button>
       </div>
