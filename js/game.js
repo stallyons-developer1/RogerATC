@@ -18,6 +18,8 @@ const Game = (() => {
   const CROW_FRAMES = 10;
   let eagleImg = null, eagleReady = false; // animated eagle flap sheet (12 frames) — big birds
   const EAGLE_FRAMES = 12;
+  let smokeImg = null, smokeReady = false; // billowing smoke plume sheet (6 frames) — toxic smoke stacks
+  const SMOKE_FRAMES = 6;
   let mtnImg = null, mtnReady = false, mtnAspect = 0.924; // realistic rock peak
   let windT = 0;                      // wind animation clock
 
@@ -89,6 +91,10 @@ const Game = (() => {
     eagleImg = new Image();
     eagleImg.onload = () => { eagleReady = true; };
     eagleImg.src = 'assets/birds/eagle_sheet.webp';
+    // billowing smoke plume sheet (6-frame churn) — toxic smoke stacks
+    smokeImg = new Image();
+    smokeImg.onload = () => { smokeReady = true; };
+    smokeImg.src = 'assets/smoke_sheet.webp';
     window.addEventListener('resize', resize);
     resize();
   }
@@ -745,15 +751,28 @@ const Game = (() => {
 
   function drawStack(e) {
     const top = floorY - e.h, cx = e.x + e.w / 2;
-    // realistic drifting toxic smoke — widening, fading, warm-lit low / grey high
-    for (let i = 0; i < 9; i++) {
-      const f = i / 9;
-      const sy = top - f * e.toxic;
-      const sway = Math.sin(e.puff * 1.3 + i * 0.7) * (8 + f * 24);
-      const rad = e.w * (0.55 + f * 1.35);
-      const warm = 1 - f;
-      ctx.fillStyle = `rgba(${90 + warm * 70},${78 + warm * 28},78,${0.34 * (1 - f)})`;
-      ctx.beginPath(); ctx.arc(cx + sway, sy, rad, 0, 6.28); ctx.fill();
+    // billowing toxic smoke — real sprite (6-frame churn) rising from the chimney top
+    if (smokeReady) {
+      const fw = smokeImg.width / SMOKE_FRAMES;
+      const fi = Math.floor(e.puff * 6) % SMOKE_FRAMES;         // ~6fps churn
+      const dh = e.toxic, dw = dh * (fw / smokeImg.height);     // plume billows wider than chimney
+      const sway = Math.sin(e.puff * 1.1) * 10;
+      ctx.save();
+      ctx.globalAlpha = 0.9;
+      ctx.drawImage(smokeImg, fi * fw, 0, fw, smokeImg.height,
+        cx - dw / 2 + sway, top - dh, dw, dh);               // base sits at chimney top
+      ctx.restore();
+    } else {
+      // vector fallback: drifting puffs
+      for (let i = 0; i < 9; i++) {
+        const f = i / 9;
+        const sy = top - f * e.toxic;
+        const sway = Math.sin(e.puff * 1.3 + i * 0.7) * (8 + f * 24);
+        const rad = e.w * (0.55 + f * 1.35);
+        const warm = 1 - f;
+        ctx.fillStyle = `rgba(${90 + warm * 70},${78 + warm * 28},78,${0.34 * (1 - f)})`;
+        ctx.beginPath(); ctx.arc(cx + sway, sy, rad, 0, 6.28); ctx.fill();
+      }
     }
     // tapered chimney silhouette
     ctx.fillStyle = SIL;
