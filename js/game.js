@@ -765,13 +765,11 @@ const Game = (() => {
 
   function drawPlane() {
     const s = plane.size;
-    if (breezeMode && planeReady) {                     // real Breeze jet sprite
-      const w = s * 2.9, h = w / planeAspect;
+    if (breezeMode && planeReady) {                     // real Breeze jet sprite (no shadow)
+      const w = s * 4.2, h = w / planeAspect;
       ctx.save();
       ctx.translate(plane.x, plane.y);
       ctx.rotate(plane.angle);
-      ctx.fillStyle = 'rgba(0,0,0,0.15)';
-      ctx.beginPath(); ctx.ellipse(2, h * 0.5, w * 0.4, h * 0.35, 0, 0, 6.28); ctx.fill();
       ctx.drawImage(planeImg, -w / 2, -h / 2, w, h);
       ctx.restore();
       return;
