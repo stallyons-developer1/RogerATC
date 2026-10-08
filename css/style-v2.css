@@ -387,6 +387,14 @@ body.breeze .screen {
   text-shadow: 0 6px 20px rgba(0,0,0,0.3);
 }
 .screen-sub { color: rgba(255,255,255,0.82); font-size: 15px; margin-top: -8px; }
+/* Cash-prize note (spec: "TOP RANK IS SUBJECT TO CASH PRIZES AND REWARDS") */
+.prize-note {
+  font-size: 12.5px; font-weight: 800; letter-spacing: 0.4px;
+  color: var(--gold); text-align: center; line-height: 1.35;
+  background: rgba(0,0,0,0.26); border: 1px solid rgba(255,209,102,0.45);
+  border-radius: 12px; padding: 9px 14px; max-width: 340px; margin: -4px auto 0;
+}
+body.breeze .prize-note { display: none; } /* Breeze is free — no ranking, no prizes */
 .callsign-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
@@ -516,21 +524,24 @@ kbd {
   bottom: 150px;
   margin-inline: auto;
   /* ▼▼▼ RESIZE THE WHOLE BUBBLE: change ONLY this one value ▼▼▼ */
-  --bub: 130px;
+  --bub: 120PX;
   width: var(--bub);
   aspect-ratio: 1.22;                /* height auto from width — keeps the cloud shape */
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 9% 11% 23% 9%;            /* % padding scales with the bubble */
+  padding: 9% 11% 14% 9%;            /* % padding scales with the bubble */
   color: #1d1430;
   font-weight: 800;
   font-size: calc(var(--bub) * 0.095);   /* text scales with the bubble too */
   text-align: center;
   line-height: 1.22;
   z-index: 2;
-  background: url("../assets/bubble_frame_v2.webp") center/100% 100% no-repeat;
+  background: url("../assets/bubble_frame_v2.webp");
   animation: bubbleIn 0.3s ease;
+  background-size: contain;
+  background-position: center;
+  background-repeat: NO-REPEAT;
 }
 /* frosted-glass fill, clipped to the cloud shape (clip-path works with backdrop-filter; mask does not) */
 .chatter-frost {
@@ -540,7 +551,7 @@ kbd {
   -webkit-clip-path: polygon(34.2% 5.5%, 30.1% 8.3%, 28.0% 11.1%, 28.7% 13.9%, 29.4% 16.6%, 15.7% 19.4%, 13.7% 22.2%, 12.3% 24.9%, 13.0% 27.7%, 13.7% 30.5%, 13.7% 33.2%, 13.7% 36.0%, 8.2% 38.8%, 6.2% 41.6%, 5.5% 44.3%, 5.5% 47.1%, 6.2% 49.9%, 8.2% 52.6%, 18.5% 55.4%, 18.5% 58.2%, 18.5% 60.9%, 19.1% 63.7%, 20.5% 66.5%, 21.9% 69.3%, 25.3% 72.0%, 41.7% 74.8%, 43.7% 77.6%, 45.8% 80.3%, 47.2% 80.3%, 47.2% 77.6%, 45.1% 74.8%, 58.1% 72.0%, 62.2% 69.3%, 64.2% 66.5%, 64.9% 63.7%, 73.1% 60.9%, 73.1% 58.2%, 77.9% 55.4%, 82.0% 52.6%, 84.1% 49.9%, 84.7% 47.1%, 85.4% 44.3%, 84.7% 41.6%, 84.1% 38.8%, 81.3% 36.0%, 77.9% 33.2%, 75.2% 30.5%, 75.2% 27.7%, 77.2% 24.9%, 75.2% 22.2%, 64.9% 19.4%, 64.9% 16.6%, 63.6% 13.9%, 62.2% 11.1%, 60.1% 8.3%, 34.2% 5.5%);
   clip-path: polygon(34.2% 5.5%, 30.1% 8.3%, 28.0% 11.1%, 28.7% 13.9%, 29.4% 16.6%, 15.7% 19.4%, 13.7% 22.2%, 12.3% 24.9%, 13.0% 27.7%, 13.7% 30.5%, 13.7% 33.2%, 13.7% 36.0%, 8.2% 38.8%, 6.2% 41.6%, 5.5% 44.3%, 5.5% 47.1%, 6.2% 49.9%, 8.2% 52.6%, 18.5% 55.4%, 18.5% 58.2%, 18.5% 60.9%, 19.1% 63.7%, 20.5% 66.5%, 21.9% 69.3%, 25.3% 72.0%, 41.7% 74.8%, 43.7% 77.6%, 45.8% 80.3%, 47.2% 80.3%, 47.2% 77.6%, 45.1% 74.8%, 58.1% 72.0%, 62.2% 69.3%, 64.2% 66.5%, 64.9% 63.7%, 73.1% 60.9%, 73.1% 58.2%, 77.9% 55.4%, 82.0% 52.6%, 84.1% 49.9%, 84.7% 47.1%, 85.4% 44.3%, 84.7% 41.6%, 84.1% 38.8%, 81.3% 36.0%, 77.9% 33.2%, 75.2% 30.5%, 75.2% 27.7%, 77.2% 24.9%, 75.2% 22.2%, 64.9% 19.4%, 64.9% 16.6%, 63.6% 13.9%, 62.2% 11.1%, 60.1% 8.3%, 34.2% 5.5%);
 }
-#chatterText { position: relative; z-index: 1; color: #15102a; text-shadow: 0 0 3px rgba(255,255,255,0.95), 0 0 6px rgba(255,255,255,0.9), 0 1px 2px rgba(255,255,255,0.9); }
+#chatterText {position: absolute;z-index: 1;color: #15102a;text-shadow: 0 0 3px rgba(255,255,255,0.95), 0 0 6px rgba(255,255,255,0.9), 0 1px 2px rgba(255,255,255,0.9);display: flex;justify-content: center;align-items: center;top: 43%;}
 @keyframes bubbleIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* Bottom controls */
