@@ -11,7 +11,7 @@
   const hide = (el) => el.classList.add('hidden');
 
   // ---- elements ----
-  const screens = { auth: $('auth'), menu: $('menu'), leaderboard: $('leaderboard'), multiplayer: $('multiplayer'), mpresult: $('mpresult'), callsign: $('callsign'), howto: $('howto'), result: $('result'), pause: $('pause') };
+  const screens = { auth: $('auth'), menu: $('menu'), leaderboard: $('leaderboard'), multiplayer: $('multiplayer'), mpresult: $('mpresult'), subscribe: $('subscribe'), callsign: $('callsign'), howto: $('howto'), result: $('result'), pause: $('pause') };
   const hud = $('hud');
   const canvas = $('game');
 
@@ -39,6 +39,7 @@
   let STRIPE_PK = '';
   async function api(action, data) { return call('auth.php', action, data); }
   async function mapi(action, data) { return call('match.php', action, data); }
+  async function payapi(action, data) { return call('pay.php', action, data); }
   async function call(file, action, data) {
     try {
       const res = await fetch('api/' + file + '?action=' + action, {
@@ -71,6 +72,7 @@
     Audio.unlock(); Audio.play('click');
     if (btn.dataset.mode === 'multi') {
       if (!currentUser) { flash(btn, 'Log in to play Multiplayer!'); return; }
+      if (!currentUser.sub_multiplayer) { openSubscribe(); return; }   // $4.99/mo gate (spec)
       openMultiplayer();
       return;
     }
@@ -205,6 +207,46 @@
     mpPoll = setInterval(poll, 2500);
   }
   $('mpDone').addEventListener('click', () => { Audio.play('click'); clearInterval(mpPoll); mpPoll = null; mpMatch = null; Game.stop(); goto('menu'); });
+
+  /* ---------------------------------------------------------- subscribe / premium */
+  function subMsg(t, ok) { const e = $('subMsg'); e.textContent = t || ''; e.className = 'auth-msg' + (t ? (ok ? ' ok' : ' err') : ''); }
+  function openSubscribe() {
+    document.querySelectorAll('#subscribe .plan-card').forEach((c) => {
+      const owned = currentUser && ((c.dataset.plan === 'multiplayer' && currentUser.sub_multiplayer) || (c.dataset.plan === 'adfree' && currentUser.sub_adfree));
+      c.classList.toggle('owned', !!owned);
+      const btn = c.querySelector('.plan-btn'); if (btn) btn.textContent = owned ? '✓ Active' : 'Subscribe';
+    });
+    subMsg('');
+    goto('subscribe');
+  }
+  $('subBack').addEventListener('click', () => { Audio.play('click'); goto('menu'); });
+  $('premiumBtn').addEventListener('click', () => { Audio.play('click'); if (!currentUser) { setAuthMode('login'); goto('auth'); return; } openSubscribe(); });
+  document.querySelectorAll('#subscribe .plan-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      Audio.play('click');
+      if (!currentUser) { subMsg('Please log in first.', false); return; }
+      subMsg('Opening secure checkout…', true);
+      const r = await payapi('checkout', { plan: btn.dataset.plan });
+      if (r.error) { subMsg(r.error, false); return; }
+      location.href = r.url;                               // -> Stripe Checkout
+    });
+  });
+  async function handlePayReturn() {
+    const q = new URLSearchParams(location.search);
+    const pay = q.get('pay');
+    if (!pay) return false;
+    history.replaceState(null, '', location.pathname);     // clean URL
+    if (pay === 'success' && q.get('session_id')) {
+      const r = await payapi('confirm', { session_id: q.get('session_id') });
+      if (r.ok) {
+        const me = await api('me'); if (me.user) currentUser = me.user;
+        updateAccountUI(); openSubscribe();
+        subMsg('🎉 Subscription active — enjoy!', true);
+        return true;
+      }
+    }
+    return false;
+  }
 
   /* ---------------------------------------------------------- call sign picker */
   function buildCallsigns() {
@@ -487,8 +529,11 @@
   async function boot() {
     const r = await api('me');
     currentUser = (r && r.user) || null;
-    if (currentUser) enterApp();
-    else { setAuthMode('login'); goto('auth'); }
+    if (currentUser) {
+      updateAccountUI();
+      if (await handlePayReturn()) return;     // returned from Stripe -> stay on subscribe
+      enterApp();
+    } else { setAuthMode('login'); goto('auth'); }
   }
   boot();
 })();

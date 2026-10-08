@@ -303,6 +303,20 @@ html, body {
 .mp-player.winner b { color: var(--good); }
 .mp-vs { font-size: 18px; font-weight: 900; color: rgba(255,255,255,0.6); }
 
+/* ===================== SUBSCRIBE / PLANS ===================== */
+.plan-card {
+  width: 100%; text-align: left; padding: 16px 18px; border-radius: 16px;
+  background: var(--glass-bg); border: 1px solid var(--glass-brd); backdrop-filter: blur(8px);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.plan-top { display: flex; align-items: baseline; justify-content: space-between; }
+.plan-name { font-size: 18px; font-weight: 900; color: #fff; }
+.plan-price { font-size: 24px; font-weight: 900; color: var(--gold); }
+.plan-price small { font-size: 12px; font-weight: 700; opacity: 0.8; }
+.plan-desc { font-size: 13px; color: rgba(255,255,255,0.8); line-height: 1.4; }
+.plan-card.owned { border-color: var(--good); }
+.plan-card.owned .plan-btn { background: var(--good); color: #0b3d1a; pointer-events: none; }
+
 /* ===================== CALL SIGN GRID ===================== */
 .screen-title {
   font-size: clamp(24px, 6.5vw, 36px);

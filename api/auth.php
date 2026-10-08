@@ -29,6 +29,8 @@ function publicUser($u) {
     'callsign'   => $u['callsign'],
     'high_score' => (int) $u['high_score'],
     'provider'   => $u['provider'] ?? 'email',
+    'sub_multiplayer' => (bool) ($u['sub_multiplayer'] ?? 0),
+    'sub_adfree'      => (bool) ($u['sub_adfree'] ?? 0),
   ];
 }
 

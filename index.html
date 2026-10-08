@@ -127,6 +127,7 @@
 
         <div class="menu-foot">
           <button id="leaderboardBtn" class="ghost-btn">🏆 Ranking</button>
+          <button id="premiumBtn" class="ghost-btn">⭐ Premium</button>
           <button id="menuMute" class="ghost-btn">🔊 Sound On</button>
           <button id="howToBtn" class="ghost-btn">How to play</button>
           <button id="logoutBtn" class="ghost-btn hidden">Log out</button>
@@ -183,6 +184,26 @@
         <div class="result-actions">
           <button id="mpDone" class="primary-btn hidden">Main Menu</button>
         </div>
+      </div>
+    </section>
+
+    <!-- ===================== SUBSCRIBE / PREMIUM ===================== -->
+    <section id="subscribe" class="screen hidden">
+      <div class="menu-inner">
+        <h2 class="screen-title">⭐ GO PREMIUM</h2>
+        <p class="screen-sub">Unlock multiplayer &amp; remove ads</p>
+        <div class="plan-card" data-plan="multiplayer">
+          <div class="plan-top"><span class="plan-name">⚔️ Multiplayer</span><span class="plan-price">$4.99<small>/mo</small></span></div>
+          <p class="plan-desc">Race friends on the same course · global ranking · cash-prize leaderboard</p>
+          <button class="primary-btn plan-btn" data-plan="multiplayer">Subscribe</button>
+        </div>
+        <div class="plan-card" data-plan="adfree">
+          <div class="plan-top"><span class="plan-name">🚫 Ad-Free</span><span class="plan-price">$24.99<small>/mo</small></span></div>
+          <p class="plan-desc">Remove all ads — pure, uninterrupted flying</p>
+          <button class="primary-btn plan-btn" data-plan="adfree">Subscribe</button>
+        </div>
+        <div id="subMsg" class="auth-msg"></div>
+        <button id="subBack" class="ghost-btn">← Back</button>
       </div>
     </section>
 
