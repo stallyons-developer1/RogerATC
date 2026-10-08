@@ -16,6 +16,8 @@ const Game = (() => {
   let palmImgs = [], palmReady = false; // real palm silhouette sprites
   let crowImg = null, crowReady = false; // animated crow flap sheet (10 frames)
   const CROW_FRAMES = 10;
+  let eagleImg = null, eagleReady = false; // animated eagle flap sheet (12 frames) — big birds
+  const EAGLE_FRAMES = 12;
   let mtnImg = null, mtnReady = false, mtnAspect = 0.924; // realistic rock peak
   let windT = 0;                      // wind animation clock
 
@@ -83,6 +85,10 @@ const Game = (() => {
     crowImg = new Image();
     crowImg.onload = () => { crowReady = true; };
     crowImg.src = 'assets/birds/crow_sheet.webp';
+    // animated eagle sprite sheet (12-frame flap) — used for the big "instant-die" birds
+    eagleImg = new Image();
+    eagleImg.onload = () => { eagleReady = true; };
+    eagleImg.src = 'assets/birds/eagle_sheet.webp';
     window.addEventListener('resize', resize);
     resize();
   }
@@ -301,8 +307,8 @@ const Game = (() => {
   function spawnBigBird() {
     const y = airY();
     entities.push({
-      type: 'bigbird', x: W + 50, y, r: 26, wing: 0, baseY: y, phase: srand(0, 6.28),
-      update: (e, dt) => { e.wing += dt * 8; e.phase += dt * 0.9; e.y = e.baseY + Math.sin(e.phase) * 22; },
+      type: 'bigbird', x: W + 50, y, r: 34, wing: 0, baseY: y, phase: srand(0, 6.28),
+      update: (e, dt) => { e.wing += dt * 9; e.phase += dt * 0.9; e.y = e.baseY + Math.sin(e.phase) * 22; },
     });
   }
 
@@ -599,7 +605,7 @@ const Game = (() => {
     }
   }
 
-  // Small birds use the animated crow sprite (10-frame flap); big yellow bird stays vector + glow.
+  // Small birds = animated crow sprite (10-frame flap); big "instant-die" birds = animated eagle (12-frame).
   function drawGull(e, big) {
     const r = e.r, flap = Math.sin(e.wing);
     if (!big && crowReady) {
@@ -607,6 +613,13 @@ const Game = (() => {
       const fi = Math.floor(e.wing * 1.6) % CROW_FRAMES;
       const dh = r * 4.2, dw = dh * (fw / crowImg.height);
       ctx.drawImage(crowImg, fi * fw, 0, fw, crowImg.height, e.x - dw / 2, e.y - dh / 2, dw, dh);
+      return;
+    }
+    if (big && eagleReady) {
+      const fw = eagleImg.width / EAGLE_FRAMES;
+      const fi = Math.floor(e.wing * 1.4) % EAGLE_FRAMES;
+      const dh = r * 4.6, dw = dh * (fw / eagleImg.height);   // a bit bigger than small birds
+      ctx.drawImage(eagleImg, fi * fw, 0, fw, eagleImg.height, e.x - dw / 2, e.y - dh / 2, dw, dh);
       return;
     }
     ctx.save();
