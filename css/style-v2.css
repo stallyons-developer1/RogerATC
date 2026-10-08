@@ -515,15 +515,17 @@ kbd {
   right: 0;
   bottom: 150px;
   margin-inline: auto;
-  width: 110px;
-  height: 90px;
+  /* ▼▼▼ RESIZE THE WHOLE BUBBLE: change ONLY this one value ▼▼▼ */
+  --bub: 130px;
+  width: var(--bub);
+  aspect-ratio: 1.22;                /* height auto from width — keeps the cloud shape */
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 9% 11% 23% 9%;            /* keep text inside the cloud, clear of the bottom-left tail */
+  padding: 9% 11% 23% 9%;            /* % padding scales with the bubble */
   color: #1d1430;
   font-weight: 800;
-  font-size: clamp(7px, 2vw, 9px);
+  font-size: calc(var(--bub) * 0.095);   /* text scales with the bubble too */
   text-align: center;
   line-height: 1.22;
   z-index: 2;
