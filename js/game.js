@@ -176,7 +176,7 @@ const Game = (() => {
   /* ---------------------------------------------------------- update */
   function update(dt) {
     // course timer
-    if (!crashing) {
+    if (!crashing && !window.NODIE) {        // NODIE freezes the timer (inspection mode)
       elapsed += dt;
       timeLeft = Math.max(0, duration - elapsed);
       if (timeLeft <= 0) { survive(); return; }
@@ -429,6 +429,7 @@ const Game = (() => {
   }
 
   function crash(reason) {
+    if (window.NODIE) return;              // inspection mode: no game over
     if (crashing) return;
     crashing = true; crashTime = 0;
     plane.vy = -120;
