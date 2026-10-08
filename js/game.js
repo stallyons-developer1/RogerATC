@@ -14,6 +14,8 @@ const Game = (() => {
   const breezeMode = !!window.BREEZE; // Breeze variant: blue theme + Breeze plane
   let planeImg = null, planeReady = false, planeAspect = 3.4;
   let palmImgs = [], palmReady = false; // real palm silhouette sprites
+  let crowImg = null, crowReady = false; // animated crow flap sheet (10 frames)
+  const CROW_FRAMES = 10;
   let mtnImg = null, mtnReady = false, mtnAspect = 0.924; // realistic rock peak
   let windT = 0;                      // wind animation clock
 
@@ -76,6 +78,10 @@ const Game = (() => {
     mtnImg = new Image();
     mtnImg.onload = () => { mtnReady = true; mtnAspect = mtnImg.width / mtnImg.height; };
     mtnImg.src = 'assets/mountain.webp';
+    // animated crow sprite sheet (10-frame flap cycle)
+    crowImg = new Image();
+    crowImg.onload = () => { crowReady = true; };
+    crowImg.src = 'assets/birds/crow_sheet.webp';
     window.addEventListener('resize', resize);
     resize();
   }
@@ -591,9 +597,16 @@ const Game = (() => {
     }
   }
 
-  // Seagull silhouette with flapping "M" wings — matches the sunset backdrop.
+  // Small birds use the animated crow sprite (10-frame flap); big yellow bird stays vector + glow.
   function drawGull(e, big) {
     const r = e.r, flap = Math.sin(e.wing);
+    if (!big && crowReady) {
+      const fw = crowImg.width / CROW_FRAMES;
+      const fi = Math.floor(e.wing * 1.6) % CROW_FRAMES;
+      const dh = r * 4.2, dw = dh * (fw / crowImg.height);
+      ctx.drawImage(crowImg, fi * fw, 0, fw, crowImg.height, e.x - dw / 2, e.y - dh / 2, dw, dh);
+      return;
+    }
     ctx.save();
     ctx.translate(e.x, e.y);
     if (big) { ctx.shadowColor = 'rgba(255,210,70,0.95)'; ctx.shadowBlur = 20; }
