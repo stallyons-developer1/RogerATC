@@ -755,17 +755,19 @@ const Game = (() => {
     // billowing toxic smoke — real sprite (21-frame sequence) rising smoothly from the chimney top
     if (smokeReady) {
       const fw = smokeImg.width / SMOKE_FRAMES;
-      // ping-pong through all 21 frames (0→20→0) so the loop has no visible seam — smooth billowing
-      const period = 2 * (SMOKE_FRAMES - 1);
-      const tph = Math.floor(e.puff * 12) % period;            // ~12fps
-      const fi = tph < SMOKE_FRAMES ? tph : period - tph;
       const dh = e.toxic, dw = dh * (fw / smokeImg.height);    // plume billows wider than chimney
-      const sway = Math.sin(e.puff * 0.9) * 4;                 // gentle drift (frames carry the motion)
+      const sway = Math.sin(e.puff * 0.8) * 3;                 // tiny drift
+      const dx = cx - SMOKE_EMIT * dw + sway, dy = top - dh;   // base centred on chimney top
+      // forward loop (frame 1 → last → back to 1) with CROSS-FADE between consecutive frames = smooth motion
+      const t = e.puff * 10;                                   // ~10 fps base rate
+      const f0 = Math.floor(t) % SMOKE_FRAMES;
+      const f1 = (f0 + 1) % SMOKE_FRAMES;
+      const frac = t - Math.floor(t);
       ctx.save();
-      ctx.globalAlpha = 0.9;
-      // align the sprite's emission point (SMOKE_EMIT of cell width) onto the chimney centre
-      ctx.drawImage(smokeImg, fi * fw, 0, fw, smokeImg.height,
-        cx - SMOKE_EMIT * dw + sway, top - dh, dw, dh);        // base sits at chimney top, centred on stack
+      ctx.globalAlpha = 0.9 * (1 - frac);
+      ctx.drawImage(smokeImg, f0 * fw, 0, fw, smokeImg.height, dx, dy, dw, dh);
+      ctx.globalAlpha = 0.9 * frac;
+      ctx.drawImage(smokeImg, f1 * fw, 0, fw, smokeImg.height, dx, dy, dw, dh);
       ctx.restore();
     } else {
       // vector fallback: drifting puffs
