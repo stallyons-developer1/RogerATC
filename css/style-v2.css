@@ -519,9 +519,9 @@ kbd {
    Whatever is behind the bubble is blurred inside it (backdrop-filter), masked to the cloud shape. */
 .chatter {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 150px;
+  left: 22px;
+  /* right: 0; */
+  top: 15px;
   margin-inline: auto;
   /* ▼▼▼ RESIZE THE WHOLE BUBBLE: change ONLY this one value ▼▼▼ */
   --bub: 120PX;
@@ -530,7 +530,7 @@ kbd {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 9% 11% 14% 9%;            /* % padding scales with the bubble */
+  padding: 9% 4% 13% 9%;            /* % padding scales with the bubble */
   color: #1d1430;
   font-weight: 800;
   font-size: calc(var(--bub) * 0.095);   /* text scales with the bubble too */
@@ -551,7 +551,7 @@ kbd {
   -webkit-clip-path: polygon(34.2% 5.5%, 30.1% 8.3%, 28.0% 11.1%, 28.7% 13.9%, 29.4% 16.6%, 15.7% 19.4%, 13.7% 22.2%, 12.3% 24.9%, 13.0% 27.7%, 13.7% 30.5%, 13.7% 33.2%, 13.7% 36.0%, 8.2% 38.8%, 6.2% 41.6%, 5.5% 44.3%, 5.5% 47.1%, 6.2% 49.9%, 8.2% 52.6%, 18.5% 55.4%, 18.5% 58.2%, 18.5% 60.9%, 19.1% 63.7%, 20.5% 66.5%, 21.9% 69.3%, 25.3% 72.0%, 41.7% 74.8%, 43.7% 77.6%, 45.8% 80.3%, 47.2% 80.3%, 47.2% 77.6%, 45.1% 74.8%, 58.1% 72.0%, 62.2% 69.3%, 64.2% 66.5%, 64.9% 63.7%, 73.1% 60.9%, 73.1% 58.2%, 77.9% 55.4%, 82.0% 52.6%, 84.1% 49.9%, 84.7% 47.1%, 85.4% 44.3%, 84.7% 41.6%, 84.1% 38.8%, 81.3% 36.0%, 77.9% 33.2%, 75.2% 30.5%, 75.2% 27.7%, 77.2% 24.9%, 75.2% 22.2%, 64.9% 19.4%, 64.9% 16.6%, 63.6% 13.9%, 62.2% 11.1%, 60.1% 8.3%, 34.2% 5.5%);
   clip-path: polygon(34.2% 5.5%, 30.1% 8.3%, 28.0% 11.1%, 28.7% 13.9%, 29.4% 16.6%, 15.7% 19.4%, 13.7% 22.2%, 12.3% 24.9%, 13.0% 27.7%, 13.7% 30.5%, 13.7% 33.2%, 13.7% 36.0%, 8.2% 38.8%, 6.2% 41.6%, 5.5% 44.3%, 5.5% 47.1%, 6.2% 49.9%, 8.2% 52.6%, 18.5% 55.4%, 18.5% 58.2%, 18.5% 60.9%, 19.1% 63.7%, 20.5% 66.5%, 21.9% 69.3%, 25.3% 72.0%, 41.7% 74.8%, 43.7% 77.6%, 45.8% 80.3%, 47.2% 80.3%, 47.2% 77.6%, 45.1% 74.8%, 58.1% 72.0%, 62.2% 69.3%, 64.2% 66.5%, 64.9% 63.7%, 73.1% 60.9%, 73.1% 58.2%, 77.9% 55.4%, 82.0% 52.6%, 84.1% 49.9%, 84.7% 47.1%, 85.4% 44.3%, 84.7% 41.6%, 84.1% 38.8%, 81.3% 36.0%, 77.9% 33.2%, 75.2% 30.5%, 75.2% 27.7%, 77.2% 24.9%, 75.2% 22.2%, 64.9% 19.4%, 64.9% 16.6%, 63.6% 13.9%, 62.2% 11.1%, 60.1% 8.3%, 34.2% 5.5%);
 }
-#chatterText {position: absolute;z-index: 1;color: #15102a;text-shadow: 0 0 3px rgba(255,255,255,0.95), 0 0 6px rgba(255,255,255,0.9), 0 1px 2px rgba(255,255,255,0.9);display: flex;justify-content: center;align-items: center;top: 43%;}
+#chatterText {position: absolute;z-index: 1;color: #15102a;text-shadow: 0 0 3px rgba(255,255,255,0.95), 0 0 6px rgba(255,255,255,0.9), 0 1px 2px rgba(255,255,255,0.9);display: flex;justify-content: center;align-items: center;top: 40%;left: 24%;right: 34%;bottom: 50%;}
 @keyframes bubbleIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* Bottom controls */
