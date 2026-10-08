@@ -18,8 +18,9 @@ const Game = (() => {
   const CROW_FRAMES = 10;
   let eagleImg = null, eagleReady = false; // animated eagle flap sheet (12 frames) — big birds
   const EAGLE_FRAMES = 12;
-  let smokeImg = null, smokeReady = false; // billowing smoke plume sheet (6 frames) — toxic smoke stacks
-  const SMOKE_FRAMES = 6;
+  let smokeImg = null, smokeReady = false; // billowing smoke plume sheet (21 frames) — toxic smoke stacks
+  const SMOKE_FRAMES = 21;
+  const SMOKE_EMIT = 0.38;   // emission point x within each cell (base sits here → align to chimney)
   let mtnImg = null, mtnReady = false, mtnAspect = 0.924; // realistic rock peak
   let windT = 0;                      // wind animation clock
 
@@ -751,16 +752,20 @@ const Game = (() => {
 
   function drawStack(e) {
     const top = floorY - e.h, cx = e.x + e.w / 2;
-    // billowing toxic smoke — real sprite (6-frame churn) rising from the chimney top
+    // billowing toxic smoke — real sprite (21-frame sequence) rising smoothly from the chimney top
     if (smokeReady) {
       const fw = smokeImg.width / SMOKE_FRAMES;
-      const fi = Math.floor(e.puff * 6) % SMOKE_FRAMES;         // ~6fps churn
-      const dh = e.toxic, dw = dh * (fw / smokeImg.height);     // plume billows wider than chimney
-      const sway = Math.sin(e.puff * 1.1) * 10;
+      // ping-pong through all 21 frames (0→20→0) so the loop has no visible seam — smooth billowing
+      const period = 2 * (SMOKE_FRAMES - 1);
+      const tph = Math.floor(e.puff * 12) % period;            // ~12fps
+      const fi = tph < SMOKE_FRAMES ? tph : period - tph;
+      const dh = e.toxic, dw = dh * (fw / smokeImg.height);    // plume billows wider than chimney
+      const sway = Math.sin(e.puff * 0.9) * 4;                 // gentle drift (frames carry the motion)
       ctx.save();
       ctx.globalAlpha = 0.9;
+      // align the sprite's emission point (SMOKE_EMIT of cell width) onto the chimney centre
       ctx.drawImage(smokeImg, fi * fw, 0, fw, smokeImg.height,
-        cx - dw / 2 + sway, top - dh, dw, dh);               // base sits at chimney top
+        cx - SMOKE_EMIT * dw + sway, top - dh, dw, dh);        // base sits at chimney top, centred on stack
       ctx.restore();
     } else {
       // vector fallback: drifting puffs
