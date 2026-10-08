@@ -60,6 +60,7 @@ const Game = (() => {
   function init(cvs) {
     canvas = cvs;
     ctx = canvas.getContext('2d');
+    if (new URLSearchParams(location.search).get('nodie')) window.NODIE = true;   // inspection mode via ?nodie=1
     bgImg = new Image();
     bgImg.onload = () => { bgReady = true; if (state === 'idle') drawIdleBackdrop(); };
     bgImg.src = breezeMode ? 'assets/breeze/bg_breeze.webp' : 'assets/bg_sunset.webp';

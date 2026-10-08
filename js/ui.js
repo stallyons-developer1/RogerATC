@@ -61,6 +61,9 @@
   updateMuteLabels();
   loadConfig();
   if (BREEZE) { hide($('leaderboardBtn')); hide($('premiumBtn')); }   // free, no ranking
+  if (new URLSearchParams(location.search).get('nodie')) {            // inspection: keep the word bubble pinned
+    setInterval(() => { const c = $('chatter'); if (c) { c.classList.remove('hidden'); if (!$('chatterText').textContent) $('chatterText').textContent = 'Roger, Wilco!'; } }, 150);
+  }
 
   /* ---------------------------------------------------------- screen helpers */
   function goto(name) {
