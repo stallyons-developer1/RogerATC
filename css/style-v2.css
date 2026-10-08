@@ -204,6 +204,9 @@ html, body {
 .ghost-btn:hover { background: rgba(255,255,255,0.2); }
 
 .menu-foot { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.account-line { font-size: 12px; letter-spacing: 0.5px; color: rgba(255,255,255,0.65); font-weight: 700; text-align: center; margin-top: -4px; }
+.account-line .unverified { color: var(--gold); font-size: 9.5px; letter-spacing: 1px; margin-left: 6px; text-transform: uppercase;
+  background: rgba(0,0,0,0.25); padding: 2px 7px; border-radius: 6px; }
 .version-pill {
   position: absolute;
   bottom: 14px;

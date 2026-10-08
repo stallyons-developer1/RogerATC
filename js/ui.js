@@ -576,7 +576,7 @@
   function updateAccountUI() {
     const pill = $('userPill');
     if (currentUser) {
-      pill.textContent = currentUser.email + (currentUser.verified ? '' : ' • unverified');
+      pill.innerHTML = esc(currentUser.email) + (currentUser.verified ? '' : ' <span class="unverified">unverified</span>');
       show($('logoutBtn'));
       if (currentUser.high_score && currentUser.high_score > highScore()) saveHigh(currentUser.high_score);
       el.best.textContent = highScore();
