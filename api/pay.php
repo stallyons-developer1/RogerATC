@@ -48,6 +48,8 @@ if ($action === 'checkout') {
     'client_reference_id' => (string) uid(),
     'metadata[plan]' => $plan,
     'metadata[uid]'  => (string) uid(),
+    'subscription_data[metadata][plan]' => $plan,   // carried on the subscription for webhooks
+    'subscription_data[metadata][uid]'  => (string) uid(),
   ];
   [$code, $sess] = stripe('POST', 'checkout/sessions', $params);
   if ($code >= 300 || !isset($sess['url'])) out(['error' => 'Stripe: ' . ($sess['error']['message'] ?? 'error')], 500);
