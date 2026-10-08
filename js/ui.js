@@ -375,6 +375,7 @@
     el.resultBest.textContent = highScore();
     el.best.textContent = highScore();
     if (isBest) show(el.newBest); else hide(el.newBest);
+    updateAds();
     goto('result');
   }
 
@@ -514,6 +515,14 @@
       pill.textContent = 'Guest • RogerATC';
       hide($('logoutBtn'));
     }
+    updateAds();
+  }
+  // Ads show for everyone except Ad-Free subscribers. Real AdSense units activate once
+  // the client has an approved domain + ca-pub-… id (see README); until then this is a slot.
+  const AD_CLIENT = '';   // e.g. 'ca-pub-XXXXXXXXXXXXXXXX'
+  function updateAds() {
+    const showAds = !(currentUser && currentUser.sub_adfree);
+    document.querySelectorAll('.ad-slot').forEach((s) => s.classList.toggle('hidden', !showAds));
   }
 
   function enterApp() {
