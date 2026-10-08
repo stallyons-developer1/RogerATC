@@ -103,7 +103,7 @@ const Game = (() => {
     currentSeed = opts.seed || (Math.floor(Math.random() * 1e9) + 1);
     seedRng(currentSeed);                                      // same seed => same terrain
 
-    plane = { x: W * 0.28, y: H * 0.45, vy: 0, angle: 0, size: 26, dead: false };
+    plane = { x: W * 0.28, y: H * 0.45, vy: 0, angle: 0, size: 32, dead: false };
     entities = [];
     particles = [];
     popups = [];
@@ -766,7 +766,7 @@ const Game = (() => {
   function drawPlane() {
     const s = plane.size;
     if (breezeMode && planeReady) {                     // real Breeze jet sprite (no shadow)
-      const w = s * 4.2, h = w / planeAspect;
+      const w = s * 3.4, h = w / planeAspect;           // keeps Breeze ~same after size bump
       ctx.save();
       ctx.translate(plane.x, plane.y);
       ctx.rotate(plane.angle);

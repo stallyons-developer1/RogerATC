@@ -406,13 +406,13 @@
   }
   function speak(text) {
     if (!('speechSynthesis' in window)) return;
+    // don't interrupt — let the current line finish; skip new voice while still talking
+    if (window.speechSynthesis.speaking || window.speechSynthesis.pending) return;
     try {
-      // skip emoji-only / symbol bits
-      const clean = text.replace(/[^\w\s!?.,'-]/g, '').trim();
+      const clean = text.replace(/[^\w\s!?.,'-]/g, '').trim();   // strip emoji/symbols
       if (!clean) return;
       const u = new SpeechSynthesisUtterance(clean);
       u.rate = 1.05; u.pitch = 0.9; u.volume = 0.55;
-      window.speechSynthesis.cancel();
       window.speechSynthesis.speak(u);
     } catch (_) {}
   }

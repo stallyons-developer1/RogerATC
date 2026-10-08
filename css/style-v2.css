@@ -512,8 +512,8 @@ kbd {
   right: 0;
   bottom: 150px;
   margin-inline: auto;
-  width: clamp(84px, 10vw, 50px);
-  height: clamp(69px, 6vw, 87px);
+  width: 200px;
+  height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
