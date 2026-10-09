@@ -21,6 +21,8 @@ const Game = (() => {
   let smokeImg = null, smokeReady = false; // continuous smoke plume (50-frame GIF → grid sheet) — toxic smoke
   const SMOKE_FRAMES = 50, SMOKE_COLS = 10, SMOKE_ROWS = 5;
   const SMOKE_EMIT = 0.44;   // emission point x within each cell (base sits here → align to chimney)
+  let chimneyImg = null, chimneyReady = false; // realistic chimney image (smoke stacks)
+  const CHIMNEY_ASPECT = 0.241;   // img w/h
   let mtnImg = null, mtnReady = false, mtnAspect = 0.924; // realistic rock peak
   let windT = 0;                      // wind animation clock
 
@@ -96,6 +98,10 @@ const Game = (() => {
     smokeImg = new Image();
     smokeImg.onload = () => { smokeReady = true; };
     smokeImg.src = 'assets/smoke_sheet.webp';
+    // realistic chimney image for smoke stacks
+    chimneyImg = new Image();
+    chimneyImg.onload = () => { chimneyReady = true; };
+    chimneyImg.src = 'assets/chimney.webp';
     window.addEventListener('resize', resize);
     resize();
   }
@@ -781,19 +787,24 @@ const Game = (() => {
         ctx.beginPath(); ctx.arc(cx + sway, sy, rad, 0, 6.28); ctx.fill();
       }
     }
-    // tapered chimney silhouette
-    ctx.fillStyle = SIL;
-    ctx.beginPath();
-    ctx.moveTo(e.x, floorY);
-    ctx.lineTo(e.x + e.w * 0.16, top);
-    ctx.lineTo(e.x + e.w * 0.84, top);
-    ctx.lineTo(e.x + e.w, floorY);
-    ctx.closePath(); ctx.fill();
-    // warn band + rim light
-    ctx.fillStyle = 'rgba(200,70,50,0.85)';
-    ctx.fillRect(e.x + e.w * 0.14, top + 6, e.w * 0.72, 5);
-    ctx.strokeStyle = RIM; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(e.x, floorY); ctx.lineTo(e.x + e.w * 0.16, top); ctx.stroke();
+    // realistic chimney image (drawn over the smoke base so the plume emerges from the top opening)
+    if (chimneyReady) {
+      const chH = e.h, chW = chH * CHIMNEY_ASPECT;
+      ctx.drawImage(chimneyImg, cx - chW / 2, floorY - chH, chW, chH);
+    } else {
+      // vector fallback: tapered silhouette + warn band + rim light
+      ctx.fillStyle = SIL;
+      ctx.beginPath();
+      ctx.moveTo(e.x, floorY);
+      ctx.lineTo(e.x + e.w * 0.16, top);
+      ctx.lineTo(e.x + e.w * 0.84, top);
+      ctx.lineTo(e.x + e.w, floorY);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(200,70,50,0.85)';
+      ctx.fillRect(e.x + e.w * 0.14, top + 6, e.w * 0.72, 5);
+      ctx.strokeStyle = RIM; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(e.x, floorY); ctx.lineTo(e.x + e.w * 0.16, top); ctx.stroke();
+    }
   }
 
   function drawParticles() {
