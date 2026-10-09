@@ -19,8 +19,8 @@ const Game = (() => {
   let eagleImg = null, eagleReady = false; // animated eagle flap sheet (12 frames) — big birds
   const EAGLE_FRAMES = 12;
   let smokeImg = null, smokeReady = false; // continuous smoke plume (50-frame GIF → grid sheet) — toxic smoke
-  const SMOKE_FRAMES = 60, SMOKE_COLS = 10, SMOKE_ROWS = 6;
-  const SMOKE_EMIT = 0.50;   // emission point x within each cell (base sits here → align to chimney)
+  const SMOKE_FRAMES = 50, SMOKE_COLS = 10, SMOKE_ROWS = 5;
+  const SMOKE_EMIT = 0.44;   // emission point x within each cell (base sits here → align to chimney)
   let chimneyImg = null, chimneyReady = false; // realistic chimney image (smoke stacks)
   const CHIMNEY_ASPECT = 0.241;   // img w/h
   let mtnImg = null, mtnReady = false, mtnAspect = 0.924; // realistic rock peak
@@ -429,9 +429,12 @@ const Game = (() => {
           break;
         case 'stack': {
           const stackTop = floorY - e.h;
-          // toxic smoke column (hazard -25, once)
-          if (boxHit(b, e.x - 4, stackTop - e.toxic, e.w + 8, e.toxic)) {
-            e.got = true;
+          // solid chimney body = crash (like a tower). Matches the visible brick column.
+          const chW = e.h * CHIMNEY_ASPECT, chCx = e.x + e.w / 2;
+          if (boxHit(b, chCx - chW * 0.42, stackTop, chW * 0.84, e.h)) { crash('stack'); break; }
+          // toxic smoke column above it (hazard -25, once)
+          if (!e.smokeHit && boxHit(b, e.x - 4, stackTop - e.toxic, e.w + 8, e.toxic)) {
+            e.smokeHit = true;
             addScore(DATA.score.toxicSmoke, plane.x, plane.y, 'bad');
             Audio.play('poof'); emitSmoke(plane.x, plane.y);
           }
