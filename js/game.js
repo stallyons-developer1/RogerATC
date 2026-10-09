@@ -18,9 +18,9 @@ const Game = (() => {
   const CROW_FRAMES = 10;
   let eagleImg = null, eagleReady = false; // animated eagle flap sheet (12 frames) — big birds
   const EAGLE_FRAMES = 12;
-  let smokeImg = null, smokeReady = false; // billowing smoke plume sheet (21 frames) — toxic smoke stacks
-  const SMOKE_FRAMES = 21;
-  const SMOKE_EMIT = 0.38;   // emission point x within each cell (base sits here → align to chimney)
+  let smokeImg = null, smokeReady = false; // continuous smoke plume (50-frame GIF → grid sheet) — toxic smoke
+  const SMOKE_FRAMES = 50, SMOKE_COLS = 10, SMOKE_ROWS = 5;
+  const SMOKE_EMIT = 0.44;   // emission point x within each cell (base sits here → align to chimney)
   let mtnImg = null, mtnReady = false, mtnAspect = 0.924; // realistic rock peak
   let windT = 0;                      // wind animation clock
 
@@ -754,20 +754,20 @@ const Game = (() => {
     const top = floorY - e.h, cx = e.x + e.w / 2;
     // billowing toxic smoke — real sprite (21-frame sequence) rising smoothly from the chimney top
     if (smokeReady) {
-      const fw = smokeImg.width / SMOKE_FRAMES;
-      const dh = e.toxic, dw = dh * (fw / smokeImg.height);    // plume billows wider than chimney
-      const sway = Math.sin(e.puff * 0.8) * 3;                 // tiny drift
-      const dx = cx - SMOKE_EMIT * dw + sway, dy = top - dh;   // base centred on chimney top
-      // forward loop (frame 1 → last → back to 1) with CROSS-FADE between consecutive frames = smooth motion
-      const t = e.puff * 10;                                   // ~10 fps base rate
-      const f0 = Math.floor(t) % SMOKE_FRAMES;
-      const f1 = (f0 + 1) % SMOKE_FRAMES;
+      const cw = smokeImg.width / SMOKE_COLS, ch = smokeImg.height / SMOKE_ROWS;
+      const dh = e.toxic, dw = dh * (cw / ch);                 // plume billows wider than chimney
+      const dx = cx - SMOKE_EMIT * dw, dy = top - dh;          // base centred on chimney top
+      // native 50-frame continuous loop (frame 1 → last → back to 1) + cross-fade = smooth billowing
+      const t = e.puff * 10;                                   // ~10 fps (GIF's native rate)
+      const f0 = Math.floor(t) % SMOKE_FRAMES, f1 = (f0 + 1) % SMOKE_FRAMES;
       const frac = t - Math.floor(t);
+      const sx0 = (f0 % SMOKE_COLS) * cw, sy0 = ((f0 / SMOKE_COLS) | 0) * ch;
+      const sx1 = (f1 % SMOKE_COLS) * cw, sy1 = ((f1 / SMOKE_COLS) | 0) * ch;
       ctx.save();
-      ctx.globalAlpha = 0.9 * (1 - frac);
-      ctx.drawImage(smokeImg, f0 * fw, 0, fw, smokeImg.height, dx, dy, dw, dh);
-      ctx.globalAlpha = 0.9 * frac;
-      ctx.drawImage(smokeImg, f1 * fw, 0, fw, smokeImg.height, dx, dy, dw, dh);
+      ctx.globalAlpha = 0.92 * (1 - frac);
+      ctx.drawImage(smokeImg, sx0, sy0, cw, ch, dx, dy, dw, dh);
+      ctx.globalAlpha = 0.92 * frac;
+      ctx.drawImage(smokeImg, sx1, sy1, cw, ch, dx, dy, dw, dh);
       ctx.restore();
     } else {
       // vector fallback: drifting puffs
