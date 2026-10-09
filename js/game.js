@@ -19,8 +19,8 @@ const Game = (() => {
   let eagleImg = null, eagleReady = false; // animated eagle flap sheet (12 frames) — big birds
   const EAGLE_FRAMES = 12;
   let smokeImg = null, smokeReady = false; // continuous smoke plume (50-frame GIF → grid sheet) — toxic smoke
-  const SMOKE_FRAMES = 50, SMOKE_COLS = 10, SMOKE_ROWS = 5;
-  const SMOKE_EMIT = 0.44;   // emission point x within each cell (base sits here → align to chimney)
+  const SMOKE_FRAMES = 75, SMOKE_COLS = 10, SMOKE_ROWS = 8;
+  const SMOKE_EMIT = 0.535;  // emission point x within each cell (base sits here → align to chimney)
   let chimneyImg = null, chimneyReady = false; // realistic chimney image (smoke stacks)
   const CHIMNEY_ASPECT = 0.241;   // img w/h
   let mtnImg = null, mtnReady = false, mtnAspect = 0.924; // realistic rock peak
