@@ -23,6 +23,8 @@ const Game = (() => {
   const SMOKE_EMIT = 0.535;  // emission point x within each cell (base sits here → align to chimney)
   let chimneyImg = null, chimneyReady = false; // realistic chimney image (smoke stacks)
   const CHIMNEY_ASPECT = 0.241;   // img w/h
+  let cloudImg = null, cloudReady = false;      // cartoon cloud image (collectible +25 clouds)
+  const CLOUD_ASPECT = 2.039;     // img w/h
   let mtnImg = null, mtnReady = false, mtnAspect = 0.924; // realistic rock peak
   let windT = 0;                      // wind animation clock
 
@@ -101,6 +103,10 @@ const Game = (() => {
     chimneyImg = new Image();
     chimneyImg.onload = () => { chimneyReady = true; };
     chimneyImg.src = 'assets/chimney.webp';
+    // cartoon cloud image for collectible (+25) clouds
+    cloudImg = new Image();
+    cloudImg.onload = () => { cloudReady = true; };
+    cloudImg.src = 'assets/cloud.webp';
     window.addEventListener('resize', resize);
     resize();
   }
@@ -661,6 +667,11 @@ const Game = (() => {
   }
 
   function drawCloud(e) {
+    if (cloudReady) {                              // cartoon cloud sprite
+      const w = e.r * 3.6, h = w / CLOUD_ASPECT;
+      ctx.drawImage(cloudImg, e.x - w / 2, e.y - h / 2, w, h);
+      return;
+    }
     ctx.save();
     ctx.shadowColor = 'rgba(255,220,180,0.7)'; ctx.shadowBlur = 14;
     ctx.fillStyle = 'rgba(255,249,242,0.96)';
