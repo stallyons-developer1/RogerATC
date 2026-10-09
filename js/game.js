@@ -71,11 +71,10 @@ const Game = (() => {
     bgImg = new Image();
     bgImg.onload = () => { bgReady = true; if (state === 'idle') drawIdleBackdrop(); };
     bgImg.src = breezeMode ? 'assets/breeze/bg_breeze.webp' : 'assets/bg_sunset.webp';
-    if (breezeMode) {                                   // real Breeze plane sprite
-      planeImg = new Image();
-      planeImg.onload = () => { planeReady = true; planeAspect = planeImg.width / planeImg.height; };
-      planeImg.src = 'assets/breeze/plane_breeze.webp';
-    }
+    // real plane sprite — Breeze jet for the free version, Cessna for the main version
+    planeImg = new Image();
+    planeImg.onload = () => { planeReady = true; planeAspect = planeImg.width / planeImg.height; };
+    planeImg.src = breezeMode ? 'assets/breeze/plane_breeze.webp' : 'assets/plane_cessna.webp';
     // real palm silhouettes (wind-animated)
     ['assets/palm.webp', 'assets/palm2.webp'].forEach((src, i) => {
       const img = new Image();
@@ -865,8 +864,8 @@ const Game = (() => {
 
   function drawPlane() {
     const s = plane.size;
-    if (breezeMode && planeReady) {                     // real Breeze jet sprite (no shadow)
-      const w = s * 3.4, h = w / planeAspect;           // keeps Breeze ~same after size bump
+    if (planeReady) {                                   // real plane sprite (Breeze jet / Cessna)
+      const w = s * 3.4, h = w / planeAspect;
       ctx.save();
       ctx.translate(plane.x, plane.y);
       ctx.rotate(plane.angle);
