@@ -330,10 +330,10 @@ const Game = (() => {
   }
 
   function spawnBonus(value, label) {
-    const h = srand(90, 150);                     // zones vary in height (spec)
-    const y = clamp(airY(), ceilingY + h / 2 + 10, floorY - h / 2 - 10);
-    entities.push({ type: 'bonus', x: W + 40, y, w: 46, h, value, label: label || ('+' + value), got: false, pulse: 0,
-      update: (e, dt) => { e.pulse += dt * 3; } });
+    const r = clamp(24 + value * 0.028, 26, 42);  // bigger reward = bigger orb (zones vary — spec)
+    const y = clamp(airY(), ceilingY + r + 16, floorY - r - 16);
+    entities.push({ type: 'bonus', x: W + 40, y, r, value, got: false, pulse: 0, spin: srand(0, 6.28),
+      update: (e, dt) => { e.pulse += dt * 2.4; e.spin += dt * 2.6; } });  // float bob + spin
   }
 
   function spawnMountain() {
@@ -395,7 +395,7 @@ const Game = (() => {
           }
           break;
         case 'bonus':
-          if (boxHit(b, e.x - e.w / 2, e.y - e.h / 2, e.w, e.h)) {
+          if (circHit(b, e.x, e.y, e.r)) {
             e.got = true; e.dead = true;
             const kind = e.value >= DATA.score.valley ? 'good' : 'good';
             addScore(e.value, e.x, e.y, kind);
@@ -673,26 +673,58 @@ const Game = (() => {
     ctx.restore();
   }
 
+  function starPath(r) {
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const a = -Math.PI / 2 + i * Math.PI / 5;
+      const rr = i % 2 === 0 ? r : r * 0.45;
+      const x = Math.cos(a) * rr, y = Math.sin(a) * rr;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+  }
+
+  // Floating rotating orb: number on the front face, gold star on the back, spins on its Y-axis.
   function drawBonus(e) {
-    const halo = 0.5 + Math.sin(e.pulse) * 0.2;
-    ctx.save();
-    ctx.translate(e.x, e.y);
-    const grd = ctx.createLinearGradient(0, -e.h / 2, 0, e.h / 2);
     const hot = e.value >= DATA.score.valley;
-    grd.addColorStop(0, hot ? 'rgba(74,222,128,0.1)' : 'rgba(255,209,102,0.1)');
-    grd.addColorStop(0.5, hot ? `rgba(74,222,128,${halo})` : `rgba(255,209,102,${halo})`);
-    grd.addColorStop(1, hot ? 'rgba(74,222,128,0.1)' : 'rgba(255,209,102,0.1)');
-    ctx.fillStyle = grd;
-    roundRect(-e.w / 2, -e.h / 2, e.w, e.h, 12); ctx.fill();
-    ctx.strokeStyle = hot ? 'rgba(74,222,128,0.9)' : 'rgba(255,209,102,0.95)';
-    ctx.lineWidth = 2;
-    roundRect(-e.w / 2, -e.h / 2, e.w, e.h, 12); ctx.stroke();
-    // label
-    ctx.fillStyle = '#fff';
-    ctx.font = '800 15px Trebuchet MS, sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.save(); ctx.rotate(-Math.PI / 2);
-    ctx.fillText(e.label, 0, 0);
+    const R = e.r;
+    const bob = Math.sin(e.pulse) * 4;               // gentle float
+    const sx = Math.cos(e.spin);                     // Y-axis spin → horizontal squish/flip
+    const face = Math.max(0.1, Math.abs(sx));
+    const ink = hot ? '#06492a' : '#5a3410';
+    ctx.save();
+    ctx.translate(e.x, e.y + bob);
+    // soft outer glow
+    const glow = ctx.createRadialGradient(0, 0, R * 0.3, 0, 0, R * 1.8);
+    glow.addColorStop(0, hot ? 'rgba(74,222,128,0.5)' : 'rgba(255,209,102,0.55)');
+    glow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(0, 0, R * 1.8, 0, 6.28); ctx.fill();
+    // spinning disc (glossy sphere look)
+    ctx.save();
+    ctx.scale(face, 1);
+    const g = ctx.createRadialGradient(-R * 0.32, -R * 0.32, R * 0.1, 0, 0, R);
+    g.addColorStop(0, '#ffffff');
+    g.addColorStop(0.35, hot ? '#6ef0a0' : '#ffe08a');
+    g.addColorStop(0.75, hot ? '#4ade80' : '#ffd166');
+    g.addColorStop(1, hot ? '#15964f' : '#e0962e');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(0, 0, R, 0, 6.28); ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.beginPath(); ctx.arc(0, 0, R, 0, 6.28); ctx.stroke();
+    // glossy highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.beginPath(); ctx.ellipse(-R * 0.3, -R * 0.38, R * 0.3, R * 0.18, -0.5, 0, 6.28); ctx.fill();
+    // face content (number front / star back) — squishes with the spin
+    if (sx >= 0) {
+      ctx.fillStyle = ink;
+      ctx.font = `900 ${Math.round(R * 0.66)}px Trebuchet MS, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(e.value, 0, R * 0.04);
+    } else {
+      ctx.fillStyle = ink;
+      starPath(R * 0.6); ctx.fill();
+    }
     ctx.restore();
     ctx.restore();
   }
