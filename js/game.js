@@ -37,7 +37,7 @@ const Game = (() => {
   let ceilingY = 0, floorY = 0, groundH = 0;
 
   // player + world objects
-  let plane, entities, particles, popups;
+  let plane, entities, particles, popups, debris;
   let farMtns, palms, bgClouds;       // parallax decoration
   let scroll, scrollSpeed, bgScroll;
 
@@ -138,6 +138,7 @@ const Game = (() => {
     entities = [];
     particles = [];
     popups = [];
+    debris = [];
     buildDecor();
 
     scroll = 0; bgScroll = 0;
@@ -216,12 +217,13 @@ const Game = (() => {
     // ---- plane physics (Flappy style) ----
     const P = DATA.physics;
     if (crashing) {
-      plane.vy += P.gravity * 1.3 * dt;
-      plane.angle += 3 * dt;
+      plane.vy += P.gravity * 1.4 * dt;
+      plane.y += plane.vy * dt;                 // actually fall now
+      plane.angle += 5.5 * dt;                  // tumble harder
       plane.x -= scrollSpeed * dt * 0.4;
       crashTime += dt;
       emitSmoke(plane.x, plane.y);
-      if (crashTime > 1.3) { finish('over'); return; }
+      if (crashTime > 1.8) { finish('over'); return; }  // let the wreck fall a bit longer
     } else {
       plane.vy += P.gravity * dt;
       plane.vy = clamp(plane.vy, P.maxRise, P.maxFall);
@@ -265,13 +267,14 @@ const Game = (() => {
     windT += dt;
     for (const p of palms) { p.x -= scrollSpeed * dt * 0.55; }
     recycle(palms, (p) => p.x < -120, () => mkPalm(Math.max(...palms.map((p) => p.x)) + rand(260, 460)));
-    for (const c of bgClouds) { c.x -= (scrollSpeed * 0.25 + c.v) * dt; if (c.x < -120) { c.x = W + rand(20, 120); c.y = rand(ceilingY + 20, H * 0.45); } }
 
-    // ---- particles + popups ----
+    // ---- particles + popups + debris ----
     for (const pt of particles) { pt.x += pt.vx * dt; pt.y += pt.vy * dt; pt.vy += 220 * dt; pt.life -= dt; }
     particles = particles.filter((p) => p.life > 0);
     for (const u of popups) { u.y -= 34 * dt; u.life -= dt; }
     popups = popups.filter((u) => u.life > 0);
+    for (const d of debris) { d.x += d.vx * dt; d.y += d.vy * dt; d.vy += 540 * dt; d.rot += d.vrot * dt; d.life -= dt; d.vx *= 0.99; }
+    debris = debris.filter((d) => d.life > 0);
 
     // ---- speedometer fluctuation (499–533) ----
     speedTick -= dt;
@@ -489,10 +492,22 @@ const Game = (() => {
     if (window.NODIE) return;              // inspection mode: no game over
     if (crashing) return;
     crashing = true; crashTime = 0;
-    plane.vy = -120;
+    plane.vy = -160;
     Audio.play('explode');
-    burst(plane.x, plane.y, '#ff7a3c', 28);
-    burst(plane.x, plane.y, '#ffd166', 20);
+    burst(plane.x, plane.y, '#ff7a3c', 34);
+    burst(plane.x, plane.y, '#ffd166', 22);
+    burst(plane.x, plane.y, 'rgba(90,90,100,0.8)', 16);   // smoke/ash
+    // break the plane into flying wreckage pieces (red / white / grey Cessna parts)
+    const parts = ['#e23b2b', '#ffffff', '#c9ced8', '#e23b2b', '#d8dde6', '#b02a1f'];
+    for (let i = 0; i < 14; i++) {
+      const a = rand(0, 6.28), sp = rand(80, 340);
+      debris.push({
+        x: plane.x, y: plane.y,
+        vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - rand(60, 180),   // thrown up and out
+        rot: rand(0, 6.28), vrot: rand(-10, 10),
+        w: rand(6, 16), h: rand(3, 8), color: pick(parts), life: rand(1.2, 2.0),
+      });
+    }
     if (cb.onChatter) cb.onChatter(pick(['Pull Up!', 'May Day May Day', 'Terrain Terrain Pull Up']), false);
   }
 
@@ -522,14 +537,27 @@ const Game = (() => {
      ============================================================ */
   function render() {
     drawBackground();
-    drawBgClouds();
     drawGround();
     drawPalms();
     drawCeilingFloor();
     for (const e of entities) drawEntity(e);
     drawParticles();
     if (!(crashing && plane.dead)) drawPlane();
+    drawDebris();
     drawPopups();
+  }
+
+  function drawDebris() {
+    for (const d of debris) {
+      ctx.save();
+      ctx.globalAlpha = clamp(d.life, 0, 1);
+      ctx.translate(d.x, d.y);
+      ctx.rotate(d.rot);
+      ctx.fillStyle = d.color;
+      ctx.fillRect(-d.w / 2, -d.h / 2, d.w, d.h);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
   }
 
   function drawIdleBackdrop() {
