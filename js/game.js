@@ -330,14 +330,43 @@ const Game = (() => {
     });
   }
 
+  // Keep collectibles out of terrain: returns a reachable y near `y` at column `x`,
+  // or null if the obstacle there leaves no room (so the collectible is skipped, never unreachable).
+  // Only checks mountains/towers/stacks — these are never removed by the player, so it stays
+  // deterministic across multiplayer clients.
+  function clearSpawnY(x, r, y) {
+    let surfTop = floorY;                           // highest obstacle surface over this column
+    for (const e of entities) {
+      let s = null;
+      if (e.type === 'mountain') {
+        // visual rock silhouette (full triangle) — keep collectibles off the whole rock, not just the hitbox
+        const apexX = e.x + e.w * 0.5, half = e.w * 0.5;
+        if (x > apexX - half && x < apexX + half) s = floorY - e.h * (1 - Math.abs(x - apexX) / half);
+      } else if (e.type === 'tower' || e.type === 'stack') {
+        if (x > e.x - 6 && x < e.x + e.w + 6) s = floorY - e.h;
+      }
+      if (s != null && s < surfTop) surfTop = s;
+    }
+    const maxY = surfTop - r - 26;                  // must clear the obstacle surface
+    if (y <= maxY) return y;                        // already reachable
+    if (maxY >= ceilingY + r + 10) return maxY;     // nudge up into open air above the obstacle
+    return null;                                    // no room — skip (don't place an unreachable one)
+  }
+
   function spawnCloud() {
-    entities.push({ type: 'cloud', x: W + 40, y: airY(), r: srand(26, 40), got: false });
+    const y0 = airY(), r = srand(26, 40);
+    const y = clearSpawnY(W + 40, r, y0);
+    if (y == null) return;
+    entities.push({ type: 'cloud', x: W + 40, y, r, got: false });
   }
 
   function spawnBonus(value, label) {
     const r = clamp(24 + value * 0.028, 26, 42);  // bigger reward = bigger orb (zones vary — spec)
-    const y = clamp(airY(), ceilingY + r + 16, floorY - r - 16);
-    entities.push({ type: 'bonus', x: W + 40, y, r, value, got: false, pulse: 0, spin: srand(0, 6.28),
+    const y0 = clamp(airY(), ceilingY + r + 16, floorY - r - 16);
+    const spin = srand(0, 6.28);                  // consume RNG before the (deterministic) skip check
+    const y = clearSpawnY(W + 40, r, y0);
+    if (y == null) return;                        // would be buried in terrain — skip
+    entities.push({ type: 'bonus', x: W + 40, y, r, value, got: false, pulse: 0, spin,
       update: (e, dt) => { e.pulse += dt * 2.4; e.spin += dt * 2.6; } });  // float bob + spin
   }
 
@@ -947,6 +976,6 @@ const Game = (() => {
     _debug: () => ({ state, score, birdHits, timeLeft, entities: entities ? entities.length : 0,
       types: entities ? entities.reduce((a, e) => { a[e.type] = (a[e.type] || 0) + 1; return a; }, {}) : {},
       planeY: plane ? Math.round(plane.y) : null, planeX: plane ? Math.round(plane.x) : null, crashing,
-      list: entities ? entities.map((e) => ({ t: e.type, x: Math.round(e.x), y: Math.round(e.y || 0), got: !!e.got })) : [] }),
+      list: entities ? entities.map((e) => ({ t: e.type, x: Math.round(e.x), y: Math.round(e.y || 0), got: !!e.got, w: e.w || 0, h: e.h || 0, r: e.r || 0 })) : [] }),
   };
 })();
