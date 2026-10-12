@@ -17,3 +17,6 @@ image (3).png
 # unused intermediate bubble assets (v2 files are the ones in use)
 assets/bubble_frame.png
 assets/bubble_mask.png
+
+# user-uploaded advertiser creatives (keep dir, ignore files)
+uploads/ads/ad_*

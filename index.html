@@ -213,6 +213,25 @@
       </div>
     </section>
 
+    <!-- ===================== MY AD (Run an Ad advertisers) ===================== -->
+    <section id="myad" class="screen hidden">
+      <div class="menu-inner">
+        <h2 class="screen-title">📣 MY AD</h2>
+        <p class="screen-sub">Upload the image or video that runs in the game.</p>
+        <div id="myadPreview" class="myad-preview"><span class="ad-label">No ad uploaded yet</span></div>
+        <form id="myadForm" class="auth-form">
+          <label class="myad-file">
+            <input id="myadFile" type="file" accept="image/*,video/mp4,video/webm" />
+            <span id="myadFileName">Choose image / video (max 20 MB)</span>
+          </label>
+          <input id="myadUrl" type="url" placeholder="Link when tapped (e.g. yourbusiness.com)" />
+          <button id="myadSubmit" type="submit" class="primary-btn">Upload &amp; Run Ad</button>
+        </form>
+        <div id="myadMsg" class="auth-msg"></div>
+        <button id="myadBack" class="ghost-btn">← Back</button>
+      </div>
+    </section>
+
     <!-- ===================== MESSAGES ===================== -->
     <section id="messages" class="screen hidden">
       <div class="menu-inner msg-inner">

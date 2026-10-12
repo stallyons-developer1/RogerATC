@@ -11,7 +11,7 @@
   const hide = (el) => el.classList.add('hidden');
 
   // ---- elements ----
-  const screens = { auth: $('auth'), menu: $('menu'), leaderboard: $('leaderboard'), multiplayer: $('multiplayer'), mpresult: $('mpresult'), subscribe: $('subscribe'), messages: $('messages'), callsign: $('callsign'), howto: $('howto'), result: $('result'), pause: $('pause') };
+  const screens = { auth: $('auth'), menu: $('menu'), leaderboard: $('leaderboard'), multiplayer: $('multiplayer'), mpresult: $('mpresult'), subscribe: $('subscribe'), myad: $('myad'), messages: $('messages'), callsign: $('callsign'), howto: $('howto'), result: $('result'), pause: $('pause') };
   const hud = $('hud');
   const canvas = $('game');
 
@@ -220,7 +220,8 @@
     document.querySelectorAll('#subscribe .plan-card').forEach((c) => {
       const owned = currentUser && ((c.dataset.plan === 'multiplayer' && currentUser.sub_multiplayer) || (c.dataset.plan === 'adfree' && currentUser.sub_adfree) || (c.dataset.plan === 'runad' && currentUser.sub_runad));
       c.classList.toggle('owned', !!owned);
-      const btn = c.querySelector('.plan-btn'); if (btn) btn.textContent = owned ? '✓ Active' : 'Subscribe';
+      const btn = c.querySelector('.plan-btn');
+      if (btn) btn.textContent = (owned && c.dataset.plan === 'runad') ? '📣 Manage My Ad' : (owned ? '✓ Active' : 'Subscribe');
     });
     subMsg('');
     goto('subscribe');
@@ -296,12 +297,50 @@
     btn.addEventListener('click', async () => {
       Audio.play('click');
       if (!currentUser) { subMsg('Please log in first.', false); return; }
+      if (btn.dataset.plan === 'runad' && currentUser.sub_runad) { openMyAd(); return; }  // already subscribed → manage ad
       subMsg('Opening secure checkout…', true);
       const r = await payapi('checkout', { plan: btn.dataset.plan });
       if (r.error) { subMsg(r.error, false); return; }
       location.href = r.url;                               // -> Stripe Checkout
     });
   });
+
+  /* ---------------------------------------------------------- My Ad (Run an Ad) */
+  function myadMsg(t, ok) { const e = $('myadMsg'); e.textContent = t || ''; e.classList.toggle('err', ok === false); }
+  function renderMyAd(ad, box) {
+    box = box || $('myadPreview');
+    if (ad && ad.src) {
+      box.innerHTML = ad.type === 'video'
+        ? '<video src="' + ad.src + '" muted autoplay loop playsinline></video>'
+        : '<img src="' + ad.src + '" alt="Your ad" />';
+    } else {
+      box.innerHTML = '<span class="ad-label">No ad uploaded yet</span>';
+    }
+  }
+  async function openMyAd() {
+    myadMsg(''); $('myadFileName').textContent = 'Choose image / video (max 20 MB)';
+    goto('myad');
+    const r = await call('ad.php', 'mine', {});
+    if (r && r.ad) { renderMyAd(r.ad); if (r.ad.url) $('myadUrl').value = r.ad.url; }
+    else renderMyAd(null);
+  }
+  $('myadFile').addEventListener('change', () => {
+    const f = $('myadFile').files[0];
+    $('myadFileName').textContent = f ? f.name : 'Choose image / video (max 20 MB)';
+  });
+  $('myadForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = $('myadFile').files[0];
+    if (!f) { myadMsg('Choose an image or video first.', false); return; }
+    myadMsg('Uploading…', true);
+    const fd = new FormData();
+    fd.append('action', 'upload'); fd.append('media', f); fd.append('url', $('myadUrl').value.trim());
+    let r; try { r = await (await fetch('api/ad.php?action=upload', { method: 'POST', body: fd })).json(); }
+    catch (_) { r = { error: 'Could not reach the server.' }; }
+    if (r.ok) { myadMsg('✅ Your ad is live — it now plays in the game!', true); renderMyAd(r.ad); }
+    else myadMsg(r.error || 'Upload failed.', false);
+  });
+  $('myadBack').addEventListener('click', () => { Audio.play('click'); goto('menu'); });
   async function handlePayReturn() {
     const q = new URLSearchParams(location.search);
     const pay = q.get('pay');
@@ -311,8 +350,9 @@
       const r = await payapi('confirm', { session_id: q.get('session_id') });
       if (r.ok) {
         const me = await api('me'); if (me.user) currentUser = me.user;
-        updateAccountUI(); openSubscribe();
-        subMsg('🎉 Subscription active — enjoy!', true);
+        updateAccountUI();
+        if (r.plan === 'runad') { openMyAd(); myadMsg('🎉 Subscribed! Now upload your ad.', true); }
+        else { openSubscribe(); subMsg('🎉 Subscription active — enjoy!', true); }
         return true;
       }
     }
@@ -597,9 +637,20 @@
   // Ads show for everyone except Ad-Free subscribers. Real AdSense units activate once
   // the client has an approved domain + ca-pub-… id (see README); until then this is a slot.
   const AD_CLIENT = '';   // e.g. 'ca-pub-XXXXXXXXXXXXXXXX'
-  function updateAds() {
+  async function updateAds() {
     const showAds = !(currentUser && currentUser.sub_adfree);
     document.querySelectorAll('.ad-slot').forEach((s) => s.classList.toggle('hidden', !showAds));
+    if (!showAds) return;
+    // show a live advertiser ad (image/video) if any "Run an Ad" creatives exist
+    let ads = [];
+    try { const r = await call('ad.php', 'active', {}); ads = (r && r.ads) || []; } catch (_) {}
+    if (!ads.length) return;
+    const ad = ads[Math.floor(Math.random() * ads.length)];
+    const media = ad.type === 'video'
+      ? '<video src="' + ad.src + '" muted autoplay loop playsinline></video>'
+      : '<img src="' + ad.src + '" alt="Advertisement" />';
+    const html = ad.url ? '<a href="' + ad.url + '" target="_blank" rel="noopener">' + media + '</a>' : media;
+    document.querySelectorAll('.ad-slot').forEach((s) => { s.innerHTML = html; });
   }
 
   function enterApp() {

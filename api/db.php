@@ -35,6 +35,13 @@ function db() {
     body       TEXT NOT NULL,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
   )');
+  $pdo->exec('CREATE TABLE IF NOT EXISTS ads (
+    user_id    INTEGER PRIMARY KEY,
+    media      TEXT NOT NULL,
+    type       TEXT NOT NULL,
+    url        TEXT,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )');
   $pdo->exec('CREATE TABLE IF NOT EXISTS matches (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     code        TEXT UNIQUE NOT NULL,
