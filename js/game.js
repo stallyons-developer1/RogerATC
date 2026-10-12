@@ -108,6 +108,8 @@ const Game = (() => {
     cloudImg.onload = () => { cloudReady = true; };
     cloudImg.src = 'assets/cloud.webp';
     window.addEventListener('resize', resize);
+    // phone rotated to its side (portrait ⇄ landscape): re-layout after the viewport settles
+    window.addEventListener('orientationchange', () => { setTimeout(resize, 120); setTimeout(resize, 350); });
     resize();
   }
 
@@ -122,7 +124,11 @@ const Game = (() => {
     groundH = clamp(H * 0.13, 64, 130);
     floorY = H - groundH;
     ceilingY = H * 0.085;
-    if (plane) plane.x = W * 0.28;
+    if (plane) {
+      plane.x = W * 0.28;
+      // keep the plane inside the new play area after an orientation/size change
+      plane.y = clamp(plane.y, ceilingY + plane.size, floorY - plane.size);
+    }
     if (state === 'idle') drawIdleBackdrop();
   }
 
@@ -660,7 +666,7 @@ const Game = (() => {
     ctx.fillStyle = 'rgba(255,90,110,0.95)';
     ctx.font = '700 12px Trebuchet MS, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('40,000 ft CEILING', W / 2, ceilingY + 16);
+    ctx.fillText('40,000 ft CEILING', W / 2, Math.max(ceilingY + 16, 58));  // clear the top HUD in landscape
     // floor penalty line
     ctx.setLineDash([8, 8]);
     ctx.strokeStyle = 'rgba(255,200,120,0.6)';
