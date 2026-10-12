@@ -41,13 +41,15 @@ git push origin "$BRANCH"
 
 echo "➤ 3/3  Updating server ($SERVER:$SSH_PORT)..."
 ssh -p "$SSH_PORT" "$SERVER" "cd '$SERVER_PATH' && git fetch --all --quiet && git reset --hard origin/$BRANCH \
+  && H=\$(git rev-parse --short HEAD) \
+  && sed -i \"s/DEPLOYVER/\$H/g\" index.html breeze.html \
   && mkdir -p ../breeze \
   && ln -sfn ../rogeratc/assets ../breeze/assets \
   && ln -sfn ../rogeratc/css ../breeze/css \
   && ln -sfn ../rogeratc/js ../breeze/js \
   && ln -sfn ../rogeratc/api ../breeze/api \
   && cp -f breeze.html ../breeze/index.html \
-  && echo '   server now at:' \$(git rev-parse --short HEAD) '(+ /breeze mirror)'"
+  && echo '   server now at:' \$H '(cache-busted + /breeze mirror)'"
 
 echo "✅ Deployed.  Live at:  https://<your-domain>/rogeratc/"
 

@@ -78,7 +78,7 @@
     const btn = e.target.closest('.seg-btn'); if (!btn) return;
     Audio.unlock(); Audio.play('click');
     if (btn.dataset.mode === 'multi') {
-      if (!currentUser) { flash(btn, 'Log in to play Multiplayer!'); return; }
+      if (!currentUser) { setAuthMode('login'); goto('auth'); return; }   // guest → go to login
       if (!BREEZE && !currentUser.sub_multiplayer && !TESTUNLOCK) { openSubscribe(); return; }   // $4.99/mo gate (RogerATC only)
       openMultiplayer();
       return;
@@ -415,8 +415,10 @@
           }
         },
         onSpeed: (mph) => {
+          if (!isFinite(mph)) return;                 // guard against stale-cache NaN
           el.speed.textContent = mph;
-          const t = (mph - DATA.speed.min) / (DATA.speed.max - DATA.speed.min);
+          const maxS = DATA.speed.max || 700;
+          const t = (mph - DATA.speed.min) / (maxS - DATA.speed.min);
           el.needle.style.transform = `translateX(-50%) rotate(${(-80 + t * 160)}deg)`;
         },
         onChatter: (text, isTakeoff) => showChatter(text, isTakeoff),
@@ -450,13 +452,31 @@
   function fmtTime(s) { s = Math.ceil(s); const m = Math.floor(s / 60); const r = s % 60; return `${m}:${r < 10 ? '0' : ''}${r}`; }
 
   /* ---------------------------------------------------------- radio chatter */
+  // Word bubble: queue text too (like the voice) — a new phrase waits until the current one finishes reading.
+  let chatterQueue = [], chatterBusy = false;
   function showChatter(text, isTakeoff) {
+    if (chatterBusy) { if (chatterQueue.length < 5) chatterQueue.push({ text, isTakeoff }); return; }
+    displayChatter(text, isTakeoff);
+  }
+  function displayChatter(text, isTakeoff) {
+    chatterBusy = true;
     el.chatterText.textContent = text;
     show(el.chatter);
     positionChatter();                 // snap above the plane right away (no flash)
+    let done = false;
+    const finish = () => {
+      if (done) return; done = true;
+      clearTimeout(chatterTimer);
+      hide(el.chatter); chatterBusy = false;
+      if (chatterQueue.length) { const n = chatterQueue.shift(); displayChatter(n.text, n.isTakeoff); }
+    };
     clearTimeout(chatterTimer);
-    chatterTimer = setTimeout(() => hide(el.chatter), isTakeoff ? 3200 : 2600);
-    if (!Audio.isMuted()) speak(text);
+    if (!Audio.isMuted() && 'speechSynthesis' in window) {
+      speak(text, finish);                               // hide + advance when the voice finishes reading
+      chatterTimer = setTimeout(finish, 8000);           // safety so it never gets stuck
+    } else {
+      chatterTimer = setTimeout(finish, isTakeoff ? 3200 : 2600);
+    }
   }
   // Audio cloud follows the plane: sit just above it so the player can read without looking away.
   function positionChatter() {
@@ -471,21 +491,18 @@
     b.style.top = top + 'px';
     b.style.bottom = 'auto';
   }
-  let speechPending = 0;
-  function speak(text) {
-    if (!('speechSynthesis' in window)) return;
-    // queue each phrase so it's actually heard (don't drop) — but cap the backlog so audio
-    // never lags more than ~2 phrases behind the game.
-    if (speechPending >= 2) return;
+  // Speak one phrase; calls onEnd when the voice finishes (so the bubble text advances in sync).
+  function speak(text, onEnd) {
+    const fire = () => { if (onEnd) { const f = onEnd; onEnd = null; f(); } };
+    if (!('speechSynthesis' in window)) { fire(); return; }
     try {
       const clean = text.replace(/[^\w\s!?.,'-]/g, '').trim();   // strip emoji/symbols
-      if (!clean) return;
+      if (!clean) { fire(); return; }
       const u = new SpeechSynthesisUtterance(clean);
       u.rate = 1.03; u.pitch = 0.9; u.volume = 0.8;
-      speechPending++;
-      u.onend = u.onerror = () => { speechPending = Math.max(0, speechPending - 1); };
+      u.onend = u.onerror = fire;
       window.speechSynthesis.speak(u);
-    } catch (_) {}
+    } catch (_) { fire(); }
   }
 
   /* ---------------------------------------------------------- result */

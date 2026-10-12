@@ -292,8 +292,9 @@ const Game = (() => {
     speedTick -= dt;
     if (speedTick <= 0) {
       speedTick = rand(0.35, 0.7);
-      const center = clamp(DATA.speed.base + jetHits * 34, DATA.speed.min, DATA.speed.max);
-      speedMph = Math.round(clamp(center + rand(-12, 12), DATA.speed.min, DATA.speed.max));
+      const baseS = DATA.speed.base || 516, maxS = DATA.speed.max || 700;   // fallbacks: never NaN
+      const center = clamp(baseS + jetHits * 34, DATA.speed.min, maxS);
+      speedMph = Math.round(clamp(center + rand(-12, 12), DATA.speed.min, maxS));
       if (cb.onSpeed) cb.onSpeed(speedMph);
     }
 

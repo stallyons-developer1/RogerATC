@@ -386,14 +386,14 @@ body.breeze .screen {
     url('../assets/breeze/bg_breeze.webp') center/cover no-repeat;
 }
 .breeze-mascot {
-  position: absolute; bottom: 64px; left: 10px; width: clamp(68px, 17vw, 108px);
+  position: fixed; bottom: 10px; left: 10px; width: clamp(60px, 15vw, 96px);
   filter: drop-shadow(0 6px 14px rgba(0,0,0,0.45)); z-index: 5; pointer-events: none;
   animation: mascotBob 3s ease-in-out infinite;
 }
 @keyframes mascotBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 /* Breeze plane in the upper-left corner of the home screen (client request) */
 .breeze-plane-link {
-  position: absolute; top: 14px; left: 10px; width: clamp(90px, 22vw, 148px);
+  position: fixed; top: 14px; left: 10px; width: clamp(90px, 22vw, 148px);
   z-index: 6; pointer-events: auto; cursor: pointer;
   animation: planeDrift 4s ease-in-out infinite;
 }
