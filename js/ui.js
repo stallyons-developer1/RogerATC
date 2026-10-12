@@ -407,15 +407,19 @@
     chatterTimer = setTimeout(() => hide(el.chatter), isTakeoff ? 3200 : 2600);
     if (!Audio.isMuted()) speak(text);
   }
+  let speechPending = 0;
   function speak(text) {
     if (!('speechSynthesis' in window)) return;
-    // don't interrupt — let the current line finish; skip new voice while still talking
-    if (window.speechSynthesis.speaking || window.speechSynthesis.pending) return;
+    // queue each phrase so it's actually heard (don't drop) — but cap the backlog so audio
+    // never lags more than ~2 phrases behind the game.
+    if (speechPending >= 2) return;
     try {
       const clean = text.replace(/[^\w\s!?.,'-]/g, '').trim();   // strip emoji/symbols
       if (!clean) return;
       const u = new SpeechSynthesisUtterance(clean);
-      u.rate = 1.05; u.pitch = 0.9; u.volume = 0.55;
+      u.rate = 1.03; u.pitch = 0.9; u.volume = 0.8;
+      speechPending++;
+      u.onend = u.onerror = () => { speechPending = Math.max(0, speechPending - 1); };
       window.speechSynthesis.speak(u);
     } catch (_) {}
   }

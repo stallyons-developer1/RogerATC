@@ -390,7 +390,7 @@ const Game = (() => {
   }
 
   function spawnJetStream() {
-    const y = clamp(airY(), ceilingY + 60, floorY - 60);
+    const y = ceilingY + srand(40, 82);   // high up, hugging the ceiling (client request)
     entities.push({ type: 'jet', x: W + 60, w: srand(220, 320), h: 54, y, got: false, par: 0.9, dash: 0,
       update: (e, dt) => { e.dash += dt * 600; } });
   }
