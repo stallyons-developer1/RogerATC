@@ -61,7 +61,7 @@ const DATA = {
     extended: 150,       // 2.5 min
   },
 
-  speed: { min: 499, max: 533 },  // speedometer MPH (p.206)
+  speed: { min: 499, base: 516, max: 700 },  // MPH — climbs toward 700 as jet streams speed the course up
 
   maxBirdHits: 3,        // 3 small birds => go down (p.14)
 };

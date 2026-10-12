@@ -53,6 +53,7 @@
   }
   let mpMatch = null;                   // active multiplayer match { code, seed, level, role } or null
   let pendingJoin = new URLSearchParams(location.search).get('join');   // from an invite link ?join=CODE
+  const TESTUNLOCK = new URLSearchParams(location.search).get('unlock') === '1';   // ?unlock=1 → test MP/ranking without paying
 
   /* ---------------------------------------------------------- init */
   Game.init(canvas);
@@ -78,7 +79,7 @@
     Audio.unlock(); Audio.play('click');
     if (btn.dataset.mode === 'multi') {
       if (!currentUser) { flash(btn, 'Log in to play Multiplayer!'); return; }
-      if (!BREEZE && !currentUser.sub_multiplayer) { openSubscribe(); return; }   // $4.99/mo gate (RogerATC only)
+      if (!BREEZE && !currentUser.sub_multiplayer && !TESTUNLOCK) { openSubscribe(); return; }   // $4.99/mo gate (RogerATC only)
       openMultiplayer();
       return;
     }
@@ -110,7 +111,12 @@
   $('menuMute').addEventListener('click', () => { Audio.unlock(); const m = Audio.toggleMute(); if (!m) Audio.startMusic(); updateMuteLabels(); });
 
   /* ---------------------------------------------------------- leaderboard */
-  $('leaderboardBtn').addEventListener('click', () => { Audio.play('click'); openLeaderboard(); });
+  $('leaderboardBtn').addEventListener('click', () => {
+    Audio.play('click');
+    if (!currentUser) { setAuthMode('login'); goto('auth'); return; }
+    if (!currentUser.sub_multiplayer && !TESTUNLOCK) { openSubscribe(); return; }   // ranking needs the $4.99/mo subscription
+    openLeaderboard();
+  });
   $('lbBack').addEventListener('click', () => { Audio.play('click'); goto('menu'); });
   function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
   async function openLeaderboard() {
@@ -499,9 +505,13 @@
     } else {
       el.resultTitle.textContent = 'GAME OVER';
       el.resultTitle.classList.remove('survived');
-      el.resultMsg.textContent = pick([
-        'Mayday, mayday… try again!', 'The birds got you this time.',
-        'Terrain terrain — pull up next run!', 'Shake it off, pilot. One more flight.',
+      el.resultMsg.textContent = pick([       // fail phrases — one at a time (client list)
+        "It's a long way down isn't it?", 'Try not to do that again!', 'Wow!',
+        "I didn't see that coming", 'Oh No, not again', "If it ain't one thing, it's two",
+        'Texting while flying', 'Stay off the phone!', 'Keep your eyes on the skyline',
+        'Keep your chin to the wind', "Don't want to hit that acid smoke",
+        'These birds are something else :)', "Let's try this again", "I'm getting the hang of it",
+        'Mayday Mayday ATC',
       ]);
     }
     el.resultScore.textContent = scoreVal;

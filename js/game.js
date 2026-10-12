@@ -17,6 +17,7 @@ const Game = (() => {
   let crowImg = null, crowReady = false; // animated crow flap sheet (10 frames)
   const CROW_FRAMES = 10;
   let eagleImg = null, eagleReady = false; // animated eagle flap sheet (12 frames) — big birds
+  let eagleYellowImg = null, eagleYellowReady = false; // yellow variant (spec: Big Yellow Birds)
   const EAGLE_FRAMES = 12;
   let smokeImg = null, smokeReady = false; // continuous smoke plume (50-frame GIF → grid sheet) — toxic smoke
   const SMOKE_FRAMES = 75, SMOKE_COLS = 10, SMOKE_ROWS = 8;
@@ -44,6 +45,7 @@ const Game = (() => {
   // run stats
   let score, birdHits, duration, elapsed, timeLeft, waveCount;
   let speedMph, speedTick, chatterTick, spawnGap, sunGlow;
+  let jetHits = 0, jetBoost = 0;        // each jet stream hit speeds the course up slightly
   let floorCool, crashing, crashTime;
   let callsign = '';
 
@@ -95,6 +97,9 @@ const Game = (() => {
     eagleImg = new Image();
     eagleImg.onload = () => { eagleReady = true; };
     eagleImg.src = 'assets/birds/eagle_sheet.webp';
+    eagleYellowImg = new Image();
+    eagleYellowImg.onload = () => { eagleYellowReady = true; };
+    eagleYellowImg.src = 'assets/birds/eagle_yellow.webp';
     // billowing smoke plume sheet (6-frame churn) — toxic smoke stacks
     smokeImg = new Image();
     smokeImg.onload = () => { smokeReady = true; };
@@ -150,6 +155,7 @@ const Game = (() => {
     scroll = 0; bgScroll = 0;
     scrollSpeed = 210;
     score = 0; birdHits = 0; elapsed = 0; timeLeft = duration; waveCount = 0;
+    jetHits = 0; jetBoost = 0;
     speedMph = DATA.speed.min; speedTick = 0; chatterTick = 1.2;
     spawnGap = 1.0; sunGlow = 0;
     floorCool = 0; crashing = false; crashTime = 0;
@@ -216,7 +222,7 @@ const Game = (() => {
 
     // difficulty ramps speed slightly over the course
     const prog = elapsed / duration;
-    scrollSpeed = 210 + prog * 90;
+    scrollSpeed = 210 + prog * 90 + jetBoost;   // jet streams speed the course up
     scroll += scrollSpeed * dt;
     bgScroll += scrollSpeed * dt;
 
@@ -282,11 +288,12 @@ const Game = (() => {
     for (const d of debris) { d.x += d.vx * dt; d.y += d.vy * dt; d.vy += 540 * dt; d.rot += d.vrot * dt; d.life -= dt; d.vx *= 0.99; }
     debris = debris.filter((d) => d.life > 0);
 
-    // ---- speedometer fluctuation (499–533) ----
+    // ---- speedometer: fluctuates, and climbs with each jet-stream hit (up to 700 mph) ----
     speedTick -= dt;
     if (speedTick <= 0) {
       speedTick = rand(0.35, 0.7);
-      speedMph = Math.round(clamp(speedMph + rand(-12, 12), DATA.speed.min, DATA.speed.max));
+      const center = clamp(DATA.speed.base + jetHits * 34, DATA.speed.min, DATA.speed.max);
+      speedMph = Math.round(clamp(center + rand(-12, 12), DATA.speed.min, DATA.speed.max));
       if (cb.onSpeed) cb.onSpeed(speedMph);
     }
 
@@ -333,8 +340,9 @@ const Game = (() => {
 
   function spawnBigBird() {
     const y = airY();
+    const yellow = srand(0, 1) < 0.6;   // some big birds are yellow (spec: Big Yellow Birds)
     entities.push({
-      type: 'bigbird', x: W + 50, y, r: 28, wing: 0, baseY: y, phase: srand(0, 6.28), par: 1.7,
+      type: 'bigbird', x: W + 50, y, r: 28, wing: 0, baseY: y, phase: srand(0, 6.28), par: 1.7, yellow,
       update: (e, dt) => { e.wing += dt * 11; e.phase += dt * 0.9; e.y = e.baseY + Math.sin(e.phase) * 22; },
     });
   }
@@ -396,7 +404,8 @@ const Game = (() => {
   }
 
   function spawnJetStream() {
-    const y = ceilingY + srand(40, 82);   // high up, hugging the ceiling (client request)
+    // lower / varied altitude — more adventurous (client: "lower altitude ... faster each hit")
+    const y = clamp(srand(H * 0.45, floorY - 70), ceilingY + 60, floorY - 60);
     entities.push({ type: 'jet', x: W + 60, w: srand(220, 320), h: 54, y, got: false, par: 0.9, dash: 0,
       update: (e, dt) => { e.dash += dt * 600; } });
   }
@@ -451,6 +460,7 @@ const Game = (() => {
           if (boxHit(b, e.x, e.y - e.h / 2, e.w, e.h)) {
             e.got = true; e.dead = true;
             addScore(DATA.score.jetStream, plane.x, plane.y, 'good');
+            jetHits++; jetBoost = Math.min(jetBoost + 26, 300);   // course gets faster each hit (capped)
             Audio.play('jet'); burst(plane.x, plane.y, '#9ad7ff', 26);
             if (cb.onChatter) cb.onChatter('JET STREAM! +2000', false);
           }
@@ -699,11 +709,12 @@ const Game = (() => {
       ctx.drawImage(crowImg, fi * fw, 0, fw, crowImg.height, e.x - dw / 2, e.y - dh / 2, dw, dh);
       return;
     }
-    if (big && eagleReady) {
-      const fw = eagleImg.width / EAGLE_FRAMES;
+    if (big && (eagleReady || eagleYellowReady)) {
+      const img = (e.yellow && eagleYellowReady) ? eagleYellowImg : (eagleReady ? eagleImg : eagleYellowImg);
+      const fw = img.width / EAGLE_FRAMES;
       const fi = Math.floor(e.wing * 1.4) % EAGLE_FRAMES;
-      const dh = r * 3.6, dw = dh * (fw / eagleImg.height);   // bigger than small birds, not huge
-      ctx.drawImage(eagleImg, fi * fw, 0, fw, eagleImg.height, e.x - dw / 2, e.y - dh / 2, dw, dh);
+      const dh = r * 3.6, dw = dh * (fw / img.height);        // bigger than small birds, not huge
+      ctx.drawImage(img, fi * fw, 0, fw, img.height, e.x - dw / 2, e.y - dh / 2, dw, dh);
       return;
     }
     ctx.save();

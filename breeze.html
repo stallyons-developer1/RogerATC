@@ -95,13 +95,15 @@
 
     <!-- ===================== START / MENU SCREEN ===================== -->
     <section id="menu" class="screen hidden">
-      <img src="assets/breeze/plane_breeze.webp" class="breeze-plane-corner" alt="Breeze plane" />
+      <a href="https://flybreeze.com" target="_blank" rel="noopener" class="breeze-plane-link" title="Visit flybreeze.com">
+        <img src="assets/breeze/plane_breeze.webp" class="breeze-plane-corner" alt="Breeze plane — flybreeze.com" />
+      </a>
       <div class="menu-inner">
         <div class="logo-wrap">
           <img src="assets/logo_badge.webp" class="brand-emblem" alt="RogerATC emblem" />
           <div class="logo-text">
-            <span class="logo-main">Breeze<span class="accent">ATC</span></span>
-            <span class="logo-sub">✈ ROGER&nbsp;ATC • FREE</span>
+            <span class="logo-main">BreezeRoger<span class="accent">ATC</span></span>
+            <span class="logo-sub">✈ FREE</span>
           </div>
         </div>
 
@@ -135,22 +137,24 @@
           <button id="howToBtn" class="ghost-btn">How to play</button>
           <button id="logoutBtn" class="ghost-btn hidden">Log out</button>
         </div>
+        <!-- bottom site links + Play RogerATC + Powered By Pic Citi (flows with the menu so it scrolls, uncluttered) -->
+        <div class="breeze-footer">
+          <a href="/rogeratc/" class="breeze-rogerlink">✈ Play RogerATC</a>
+          <div class="breeze-links">
+            <a href="https://flybreeze.com" target="_blank" rel="noopener">flybreeze.com</a>
+            <a href="https://breeze4pointt.com" target="_blank" rel="noopener">breeze4pointt.com</a>
+            <a href="https://breezeReepeatit.com" target="_blank" rel="noopener">breezeReepeatit.com</a>
+            <a href="https://breezeMatchingStarz.com" target="_blank" rel="noopener">breezeMatchingStarz.com</a>
+          </div>
+          <div class="breeze-powered">
+            <span>POWERED BY</span><img src="assets/breeze/picciti.webp" alt="Pic Citi" />
+            <span id="userPill" style="margin-left:10px">Breeze • Free</span>
+          </div>
+        </div>
       </div>
 
-      <!-- Breeze mascot + bottom site links + Powered By Pic Citi -->
+      <!-- Breeze mascot (decorative corner) -->
       <img src="assets/breeze/mascot.webp" class="breeze-mascot" alt="JAY the mascot" />
-      <div class="breeze-footer">
-        <div class="breeze-links">
-          <a href="https://flybreeze.com" target="_blank" rel="noopener">flybreeze.com</a>
-          <a href="https://breeze4pointt.com" target="_blank" rel="noopener">breeze4pointt.com</a>
-          <a href="https://breezeReepeatit.com" target="_blank" rel="noopener">breezeReepeatit.com</a>
-          <a href="https://breezeMatchingStarz.com" target="_blank" rel="noopener">breezeMatchingStarz.com</a>
-        </div>
-        <div class="breeze-powered">
-          <span>POWERED BY</span><img src="assets/breeze/picciti.webp" alt="Pic Citi" />
-          <span id="userPill" style="margin-left:10px">Breeze • Free</span>
-        </div>
-      </div>
     </section>
 
     <!-- ===================== LEADERBOARD ===================== -->
