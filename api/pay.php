@@ -1,5 +1,5 @@
 <?php
-// RogerATC payments — Stripe Checkout subscriptions ($4.99 multiplayer, $24.99 ad-free).
+// RogerATC payments — Stripe Checkout subscriptions ($4.99 multiplayer, $6.99 ad-free, $24.99 run-an-ad).
 require __DIR__ . '/db.php';
 require __DIR__ . '/config.php';
 
@@ -28,7 +28,8 @@ if (!uid()) out(['error' => 'Please log in first.'], 401);
 
 $PLANS = [
   'multiplayer' => ['name' => 'RogerATC Multiplayer', 'amount' => 499,  'col' => 'sub_multiplayer'],
-  'adfree'      => ['name' => 'RogerATC Ad-Free',     'amount' => 2499, 'col' => 'sub_adfree'],
+  'adfree'      => ['name' => 'RogerATC Ad-Free',     'amount' => 699,  'col' => 'sub_adfree'],
+  'runad'       => ['name' => 'RogerATC Run an Ad',   'amount' => 2499, 'col' => 'sub_runad'],
 ];
 
 if ($action === 'checkout') {
@@ -72,9 +73,9 @@ if ($action === 'confirm') {
 }
 
 if ($action === 'status') {
-  $q = $pdo->prepare('SELECT sub_multiplayer, sub_adfree FROM users WHERE id = ?'); $q->execute([uid()]);
+  $q = $pdo->prepare('SELECT sub_multiplayer, sub_adfree, sub_runad FROM users WHERE id = ?'); $q->execute([uid()]);
   $u = $q->fetch(PDO::FETCH_ASSOC);
-  out(['sub_multiplayer' => (bool) $u['sub_multiplayer'], 'sub_adfree' => (bool) $u['sub_adfree']]);
+  out(['sub_multiplayer' => (bool) $u['sub_multiplayer'], 'sub_adfree' => (bool) $u['sub_adfree'], 'sub_runad' => (bool) $u['sub_runad']]);
 }
 
 out(['error' => 'Unknown action'], 400);

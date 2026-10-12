@@ -25,7 +25,7 @@ function db() {
     created_at   TEXT DEFAULT CURRENT_TIMESTAMP
   )');
   // migrations for existing DBs
-  foreach (['sub_multiplayer INTEGER DEFAULT 0', 'sub_adfree INTEGER DEFAULT 0', 'last_seen TEXT'] as $def) {
+  foreach (['sub_multiplayer INTEGER DEFAULT 0', 'sub_adfree INTEGER DEFAULT 0', 'sub_runad INTEGER DEFAULT 0', 'last_seen TEXT'] as $def) {
     try { $pdo->exec("ALTER TABLE users ADD COLUMN $def"); } catch (Exception $e) {}
   }
   $pdo->exec('CREATE TABLE IF NOT EXISTS messages (

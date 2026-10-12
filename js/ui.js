@@ -218,7 +218,7 @@
   function subMsg(t, ok) { const e = $('subMsg'); e.textContent = t || ''; e.className = 'auth-msg' + (t ? (ok ? ' ok' : ' err') : ''); }
   function openSubscribe() {
     document.querySelectorAll('#subscribe .plan-card').forEach((c) => {
-      const owned = currentUser && ((c.dataset.plan === 'multiplayer' && currentUser.sub_multiplayer) || (c.dataset.plan === 'adfree' && currentUser.sub_adfree));
+      const owned = currentUser && ((c.dataset.plan === 'multiplayer' && currentUser.sub_multiplayer) || (c.dataset.plan === 'adfree' && currentUser.sub_adfree) || (c.dataset.plan === 'runad' && currentUser.sub_runad));
       c.classList.toggle('owned', !!owned);
       const btn = c.querySelector('.plan-btn'); if (btn) btn.textContent = owned ? '✓ Active' : 'Subscribe';
     });

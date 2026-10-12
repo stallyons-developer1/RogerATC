@@ -31,6 +31,7 @@ function publicUser($u) {
     'provider'   => $u['provider'] ?? 'email',
     'sub_multiplayer' => (bool) ($u['sub_multiplayer'] ?? 0),
     'sub_adfree'      => (bool) ($u['sub_adfree'] ?? 0),
+    'sub_runad'       => (bool) ($u['sub_runad'] ?? 0),
   ];
 }
 
