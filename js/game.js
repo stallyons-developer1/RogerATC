@@ -121,7 +121,7 @@ const Game = (() => {
     canvas.height = Math.floor(cssH * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     W = cssW; H = cssH;
-    groundH = clamp(H * 0.13, 64, 130);
+    groundH = clamp(H * 0.14, 120, 150);   // tall enough that the floor line clears the TAP buttons
     floorY = H - groundH;
     ceilingY = H * 0.085;
     if (plane) {
