@@ -7,8 +7,8 @@
 
 (() => {
   const $ = (id) => document.getElementById(id);
-  const show = (el) => el.classList.remove('hidden');
-  const hide = (el) => el.classList.add('hidden');
+  const show = (el) => el && el.classList.remove('hidden');
+  const hide = (el) => el && el.classList.add('hidden');
 
   // ---- elements ----
   const screens = { auth: $('auth'), menu: $('menu'), leaderboard: $('leaderboard'), multiplayer: $('multiplayer'), mpresult: $('mpresult'), subscribe: $('subscribe'), myad: $('myad'), messages: $('messages'), callsign: $('callsign'), howto: $('howto'), result: $('result'), pause: $('pause') };
@@ -324,23 +324,26 @@
     if (r && r.ad) { renderMyAd(r.ad); if (r.ad.url) $('myadUrl').value = r.ad.url; }
     else renderMyAd(null);
   }
-  $('myadFile').addEventListener('change', () => {
-    const f = $('myadFile').files[0];
-    $('myadFileName').textContent = f ? f.name : 'Choose image / video (max 20 MB)';
-  });
-  $('myadForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const f = $('myadFile').files[0];
-    if (!f) { myadMsg('Choose an image or video first.', false); return; }
-    myadMsg('Uploading…', true);
-    const fd = new FormData();
-    fd.append('action', 'upload'); fd.append('media', f); fd.append('url', $('myadUrl').value.trim());
-    let r; try { r = await (await fetch('api/ad.php?action=upload', { method: 'POST', body: fd })).json(); }
-    catch (_) { r = { error: 'Could not reach the server.' }; }
-    if (r.ok) { myadMsg('✅ Your ad is live — it now plays in the game!', true); renderMyAd(r.ad); }
-    else myadMsg(r.error || 'Upload failed.', false);
-  });
-  $('myadBack').addEventListener('click', () => { Audio.play('click'); goto('menu'); });
+  // My Ad UI only exists on the paid (RogerATC) build — Breeze is free, so guard against missing nodes.
+  if ($('myadForm')) {
+    $('myadFile').addEventListener('change', () => {
+      const f = $('myadFile').files[0];
+      $('myadFileName').textContent = f ? f.name : 'Choose image / video (max 20 MB)';
+    });
+    $('myadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const f = $('myadFile').files[0];
+      if (!f) { myadMsg('Choose an image or video first.', false); return; }
+      myadMsg('Uploading…', true);
+      const fd = new FormData();
+      fd.append('action', 'upload'); fd.append('media', f); fd.append('url', $('myadUrl').value.trim());
+      let r; try { r = await (await fetch('api/ad.php?action=upload', { method: 'POST', body: fd })).json(); }
+      catch (_) { r = { error: 'Could not reach the server.' }; }
+      if (r.ok) { myadMsg('✅ Your ad is live — it now plays in the game!', true); renderMyAd(r.ad); }
+      else myadMsg(r.error || 'Upload failed.', false);
+    });
+    $('myadBack').addEventListener('click', () => { Audio.play('click'); goto('menu'); });
+  }
   async function handlePayReturn() {
     const q = new URLSearchParams(location.search);
     const pay = q.get('pay');
