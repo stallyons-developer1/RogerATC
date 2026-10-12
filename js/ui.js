@@ -626,13 +626,18 @@
   function updateAccountUI() {
     const pill = $('userPill');
     if (currentUser) {
-      pill.innerHTML = esc(currentUser.email) + (currentUser.verified ? '' : ' <span class="unverified">unverified</span>');
+      if (BREEZE) {
+        // Breeze identifies players by username (no email shown) — spec
+        pill.textContent = currentUser.callsign || (currentUser.email ? currentUser.email.split('@')[0] : 'Pilot');
+      } else {
+        pill.innerHTML = esc(currentUser.email) + (currentUser.verified ? '' : ' <span class="unverified">unverified</span>');
+      }
       show($('logoutBtn'));
       if (currentUser.high_score && currentUser.high_score > highScore()) saveHigh(currentUser.high_score);
       el.best.textContent = highScore();
       startHeartbeat();
     } else {
-      pill.textContent = 'Guest • RogerATC';
+      pill.textContent = BREEZE ? 'Guest' : 'Guest • RogerATC';
       hide($('logoutBtn'));
     }
     updateAds();
