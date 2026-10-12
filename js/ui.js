@@ -646,7 +646,8 @@
   // the client has an approved domain + ca-pub-… id (see README); until then this is a slot.
   const AD_CLIENT = '';   // e.g. 'ca-pub-XXXXXXXXXXXXXXXX'
   async function updateAds() {
-    const showAds = !(currentUser && currentUser.sub_adfree);
+    // Breeze is free with no ads at all; RogerATC shows ads to everyone except Ad-Free subscribers.
+    const showAds = !BREEZE && !(currentUser && currentUser.sub_adfree);
     document.querySelectorAll('.ad-slot').forEach((s) => s.classList.toggle('hidden', !showAds));
     if (!showAds) return;
     // show a live advertiser ad (image/video) if any "Run an Ad" creatives exist
