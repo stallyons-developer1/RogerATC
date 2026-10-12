@@ -459,8 +459,8 @@
     const pos = Game.getPlanePos();
     if (!pos) return;
     const bh = b.offsetHeight || 92;
-    let top = pos.y - pos.size * 0.5 - bh - 6;
-    if (top < 52) top = 52;            // keep clear of the top HUD
+    let top = pos.y - pos.size * 0.5 - bh - 6;          // above the plane
+    if (top < 52) top = pos.y + pos.size * 0.5 + 6;     // no room above (near ceiling) → sit below the plane
     b.style.left = pos.x + 'px';
     b.style.top = top + 'px';
     b.style.bottom = 'auto';
