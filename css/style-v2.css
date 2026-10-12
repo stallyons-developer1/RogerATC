@@ -388,6 +388,13 @@ body.breeze .screen {
   animation: mascotBob 3s ease-in-out infinite;
 }
 @keyframes mascotBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+/* Breeze plane in the upper-left corner of the home screen (client request) */
+.breeze-plane-corner {
+  position: absolute; top: 14px; left: 10px; width: clamp(90px, 22vw, 148px);
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,0.4)); z-index: 5; pointer-events: none;
+  animation: planeDrift 4s ease-in-out infinite;
+}
+@keyframes planeDrift { 0%,100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(-7px) rotate(-5deg); } }
 .breeze-footer { position: absolute; bottom: 8px; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 0 10px; }
 .breeze-links { display: flex; flex-wrap: wrap; gap: 5px 14px; justify-content: center; }
 .breeze-links a { color: rgba(255,255,255,0.88); font-size: 12px; font-weight: 700; text-decoration: none; }
