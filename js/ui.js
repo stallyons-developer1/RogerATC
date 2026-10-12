@@ -433,6 +433,7 @@
       if (st === 'running') {
         const left = Math.max(0, dur - (performance.now() - t0 - pausedMs) / 1000);
         el.timer.textContent = fmtTime(left);
+        positionChatter();
       }
       timerRAF = requestAnimationFrame(tick);
     };
@@ -446,9 +447,23 @@
   function showChatter(text, isTakeoff) {
     el.chatterText.textContent = text;
     show(el.chatter);
+    positionChatter();                 // snap above the plane right away (no flash)
     clearTimeout(chatterTimer);
     chatterTimer = setTimeout(() => hide(el.chatter), isTakeoff ? 3200 : 2600);
     if (!Audio.isMuted()) speak(text);
+  }
+  // Audio cloud follows the plane: sit just above it so the player can read without looking away.
+  function positionChatter() {
+    const b = el.chatter;
+    if (!b || b.classList.contains('hidden') || !Game.getPlanePos) return;
+    const pos = Game.getPlanePos();
+    if (!pos) return;
+    const bh = b.offsetHeight || 92;
+    let top = pos.y - pos.size * 0.5 - bh - 6;
+    if (top < 52) top = 52;            // keep clear of the top HUD
+    b.style.left = pos.x + 'px';
+    b.style.top = top + 'px';
+    b.style.bottom = 'auto';
   }
   let speechPending = 0;
   function speak(text) {

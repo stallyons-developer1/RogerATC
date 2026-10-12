@@ -1007,6 +1007,7 @@ const Game = (() => {
 
   return {
     init, start, pause, resume, stop, lift, getState: () => state, getSeed: () => currentSeed,
+    getPlanePos: () => (plane ? { x: plane.x, y: plane.y, size: plane.size } : null),   // for the follow-the-plane word bubble
     _debug: () => ({ state, score, birdHits, timeLeft, entities: entities ? entities.length : 0,
       types: entities ? entities.reduce((a, e) => { a[e.type] = (a[e.type] || 0) + 1; return a; }, {}) : {},
       planeY: plane ? Math.round(plane.y) : null, planeX: plane ? Math.round(plane.x) : null, crashing,
