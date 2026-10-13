@@ -235,6 +235,7 @@ html, body {
   color: #fff; box-shadow: 0 5px 14px rgba(255,122,77,0.45);
 }
 .auth-form { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+.auth-form .primary-btn { max-width: 100%; }   /* LOG IN button matches the input width (aligned) */
 .auth-form input {
   width: 100%; padding: 14px 16px; border-radius: 13px;
   border: 1px solid var(--glass-brd); background: rgba(255,255,255,0.12);

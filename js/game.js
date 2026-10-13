@@ -37,6 +37,7 @@ const Game = (() => {
   // world layout
   let ceilingY = 0, floorY = 0, groundH = 0;
   let physScale = 1;                  // scale plane physics to the play-gap (keeps landscape playable)
+  let spriteScale = 1;                // shrink birds/plane on short (landscape) screens
 
   // player + world objects
   let plane, entities, particles, popups, debris;
@@ -131,7 +132,8 @@ const Game = (() => {
     groundH = H < 560 ? clamp(H * 0.14, 58, 78) : clamp(H * 0.14, 120, 150);
     floorY = H - groundH;
     ceilingY = H * (H < 560 ? 0.06 : 0.085);   // thinner ceiling margin in landscape too
-    if (plane) plane.size = H < 560 ? 26 : 32;  // smaller plane in landscape (fits the tighter gap)
+    spriteScale = H < 560 ? 0.72 : 1;          // smaller birds + plane in landscape
+    if (plane) plane.size = 32 * spriteScale;  // smaller plane in landscape (fits the tighter gap)
     // scale plane physics to the vertical play-gap so landscape stays maneuverable (not cramped)
     physScale = clamp((floorY - ceilingY) / 620, 0.4, 1);
     if (plane) {
@@ -338,7 +340,7 @@ const Game = (() => {
     for (let i = 0; i < n; i++) {
       entities.push({
         type: 'bird', x: W + 40 + i * srand(40, 80), y: baseY + srand(-40, 40),
-        r: 13, wing: srand(0, 6.28), vyWave: srand(0.6, 1.4), phase: srand(0, 6.28), baseY: baseY + srand(-40, 40),
+        r: 13 * spriteScale, wing: srand(0, 6.28), vyWave: srand(0.6, 1.4), phase: srand(0, 6.28), baseY: baseY + srand(-40, 40),
         update: (e, dt) => { e.wing += dt * 12; e.phase += dt * e.vyWave; e.y = e.baseY + Math.sin(e.phase) * 16; },
       });
     }
@@ -348,7 +350,7 @@ const Game = (() => {
     const y = airY();
     const yellow = srand(0, 1) < 0.6;   // some big birds are yellow (spec: Big Yellow Birds)
     entities.push({
-      type: 'bigbird', x: W + 50, y, r: 28, wing: 0, baseY: y, phase: srand(0, 6.28), par: 1.7, yellow,
+      type: 'bigbird', x: W + 50, y, r: 28 * spriteScale, wing: 0, baseY: y, phase: srand(0, 6.28), par: 1.7, yellow,
       update: (e, dt) => { e.wing += dt * 11; e.phase += dt * 0.9; e.y = e.baseY + Math.sin(e.phase) * 22; },
     });
   }

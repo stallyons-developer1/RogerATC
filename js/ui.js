@@ -391,7 +391,14 @@
 
   /* ---------------------------------------------------------- launch game */
   let curLevel = 'regular';
+  function goFullscreen() {
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+    const already = document.fullscreenElement || document.webkitFullscreenElement;
+    if (req && !already) { try { const r = req.call(el); if (r && r.catch) r.catch(() => {}); } catch (_) {} }
+  }
   function launch() {
+    goFullscreen();                    // use the whole screen (hide the browser chrome) while playing
     goto(null);
     show(hud);
     curLevel = mpMatch ? mpMatch.level : level;
