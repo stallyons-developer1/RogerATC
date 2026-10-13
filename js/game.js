@@ -90,10 +90,6 @@ const Game = (() => {
       img.onload = () => { palmImgs[i] = img; if (palmImgs.filter(Boolean).length) palmReady = true; };
       img.src = src;
     });
-    // animated swaying palm (preferred)
-    palmAnimImg = new Image();
-    palmAnimImg.onload = () => { palmAnimReady = true; };
-    palmAnimImg.src = 'assets/palm_anim.webp';
     // realistic mountain peak
     mtnImg = new Image();
     mtnImg.onload = () => { mtnReady = true; mtnAspect = mtnImg.width / mtnImg.height; };
@@ -138,8 +134,8 @@ const Game = (() => {
     // much shorter ground on short (landscape) screens so there's room to actually play
     groundH = H < 560 ? clamp(H * 0.14, 58, 78) : clamp(H * 0.14, 120, 150);
     floorY = H - groundH;
-    // keep the ceiling line (and its label) below the top HUD cards so they never overlap
-    ceilingY = H < 560 ? Math.max(H * 0.06, 50) : Math.max(H * 0.085, 74);
+    // keep the ceiling line (and its label) clearly below the top HUD cards (not touching)
+    ceilingY = H < 560 ? Math.max(H * 0.06, 62) : Math.max(H * 0.085, 92);
     // scale all sprites to the screen so they aren't oversized on small phones
     spriteScale = clamp(Math.min(W, H) / 620, 0.6, 1);
     if (plane) plane.size = 32 * spriteScale;
