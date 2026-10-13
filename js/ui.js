@@ -109,6 +109,8 @@
   $('howToBtn').addEventListener('click', () => { Audio.play('click'); goto('howto'); });
   $('howBack').addEventListener('click', () => { Audio.play('click'); goto('menu'); });
   $('menuMute').addEventListener('click', () => { Audio.unlock(); const m = Audio.toggleMute(); if (!m) Audio.startMusic(); updateMuteLabels(); });
+  if ($('fsBtn')) $('fsBtn').addEventListener('click', () => { Audio.play('click'); toggleFullscreen(); });
+  if ($('fsBtnMenu')) $('fsBtnMenu').addEventListener('click', () => { Audio.play('click'); toggleFullscreen(); });
 
   /* ---------------------------------------------------------- leaderboard */
   $('leaderboardBtn').addEventListener('click', () => {
@@ -402,8 +404,16 @@
     const fs = document.fullscreenElement || document.webkitFullscreenElement;
     if (ex && fs) { try { const r = ex.call(document); if (r && r.catch) r.catch(() => {}); } catch (_) {} }
   }
+  function isFullscreen() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+  function toggleFullscreen() { if (isFullscreen()) exitFullscreen(); else goFullscreen(); }
+  function updateFsLabels() {
+    const fs = isFullscreen();
+    const m = $('fsBtnMenu'); if (m) m.textContent = fs ? '⛶ Exit Fullscreen' : '⛶ Fullscreen';
+    const h = $('fsBtn'); if (h) h.textContent = fs ? '🗗' : '⛶';
+  }
+  document.addEventListener('fullscreenchange', updateFsLabels);
+  document.addEventListener('webkitfullscreenchange', updateFsLabels);
   function launch() {
-    goFullscreen();                    // use the whole screen (hide the browser chrome) while playing
     goto(null);
     show(hud);
     curLevel = mpMatch ? mpMatch.level : level;
@@ -533,7 +543,6 @@
   /* ---------------------------------------------------------- result */
   function endGame(result, scoreVal) {
     cancelAnimationFrame(timerRAF);
-    exitFullscreen();                  // leave fullscreen so the player can use the browser again
     hide(hud); hide(el.chatter);
     const hs = highScore();
     const isBest = scoreVal > hs;
