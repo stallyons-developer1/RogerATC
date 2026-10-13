@@ -29,6 +29,17 @@ const Game = (() => {
   let cloudImg = null, cloudReady = false;      // cartoon cloud image (collectible +25 clouds)
   const CLOUD_ASPECT = 2.039;     // img w/h
   let mtnImg = null, mtnReady = false, mtnAspect = 0.924; // realistic rock peak
+  // Rock silhouette sampled from assets/mountain.webp: height above base (0..1) across the width.
+  // Peak sits at ~60% of the width (not centered) and reaches the very top — used so collision
+  // and spawn-clearance match the VISIBLE rock exactly (plane crashes on the real tip).
+  const MTN_PROFILE = [0.02, 0.23, 0.48, 0.46, 0.76, 0.91, 1.00, 0.79, 0.63, 0.33, 0.02];
+  function mtnSurfaceY(e, x) {
+    const f = (x - e.x) / e.w;
+    if (f < 0 || f > 1) return floorY;                 // off the rock
+    const t = f * (MTN_PROFILE.length - 1), i = Math.floor(t), fr = t - i;
+    const h0 = MTN_PROFILE[i], h1 = MTN_PROFILE[Math.min(i + 1, MTN_PROFILE.length - 1)];
+    return floorY - (h0 + (h1 - h0) * fr) * e.h;        // interpolated rock surface Y at x
+  }
   let windT = 0;                      // wind animation clock
 
   // shared sunset-silhouette palette
@@ -134,8 +145,19 @@ const Game = (() => {
     // much shorter ground on short (landscape) screens so there's room to actually play
     groundH = H < 560 ? clamp(H * 0.14, 58, 78) : clamp(H * 0.14, 120, 150);
     floorY = H - groundH;
-    // keep the ceiling line (and its label) clearly below the top HUD cards (not touching)
-    ceilingY = H < 560 ? Math.max(H * 0.06, 62) : Math.max(H * 0.085, 92);
+    // Keep an EQUAL gap above and below the ceiling line: measure the HUD score-card bottom,
+    // place the line a fixed gap below it, and the mini buttons the SAME gap below the line.
+    const hudGap = clamp(H * 0.022, 13, 20);
+    let cardBottom = 0;
+    const cardEl = document.querySelector('.hud-best');
+    if (cardEl) {
+      const br = cardEl.getBoundingClientRect(), cr = canvas.getBoundingClientRect();
+      if (br.height > 0) cardBottom = br.bottom - cr.top;
+    }
+    if (cardBottom < 20) cardBottom = (W < 420 ? 46 : 56);   // fallback when HUD is hidden (menu)
+    ceilingY = Math.round(cardBottom + hudGap);
+    const miniEl = document.querySelector('.hud-mini');
+    if (miniEl) miniEl.style.top = Math.round(ceilingY + hudGap) + 'px';
     // scale all sprites to the screen so they aren't oversized on small phones
     spriteScale = clamp(Math.min(W, H) / 620, 0.6, 1);
     if (plane) plane.size = 32 * spriteScale;
@@ -156,6 +178,8 @@ const Game = (() => {
     cb = opts.callbacks || {};
     currentSeed = opts.seed || (Math.floor(Math.random() * 1e9) + 1);
     seedRng(currentSeed);                                      // same seed => same terrain
+
+    resize();   // HUD is visible now → measure real card bottom so ceiling/mini-button gaps are exact
 
     plane = { x: W * 0.28, y: H * 0.45, vy: 0, angle: 0, size: 32 * spriteScale, dead: false };
     entities = [];
@@ -385,9 +409,7 @@ const Game = (() => {
     for (const e of entities) {
       let s = null;
       if (e.type === 'mountain') {
-        // visual rock silhouette (full triangle) — keep collectibles off the whole rock, not just the hitbox
-        const apexX = e.x + e.w * 0.5, half = e.w * 0.5;
-        if (x > apexX - half && x < apexX + half) s = floorY - e.h * (1 - Math.abs(x - apexX) / half);
+        if (x > e.x && x < e.x + e.w) s = mtnSurfaceY(e, x);   // real rock silhouette
       } else if (e.type === 'tower' || e.type === 'stack') {
         if (x > e.x - 6 && x < e.x + e.w + 6) s = floorY - e.h;
       }
@@ -497,12 +519,13 @@ const Game = (() => {
           }
           break;
         case 'mountain': {
-          // collision triangle sits inside the visible rock (central spire) — lenient & fair
-          const apexX = e.x + e.w * 0.5, peakH = e.h * 0.9, half = e.w * 0.3;
-          if (plane.x > apexX - half && plane.x < apexX + half) {
-            const dx = Math.abs(plane.x - apexX);
-            const surf = floorY - peakH * (1 - dx / half);
-            if (plane.y + b.h / 2 > surf) crash('mountain');
+          // Crash when the plane's hitbox dips below the REAL rock surface anywhere under its
+          // width — so touching the actual peak tip (at ~60% width, full height) crashes.
+          const pb = b.y + b.h;                          // plane hitbox bottom
+          for (let k = 0; k <= 4; k++) {
+            const sx = b.x + (b.w * k) / 4;
+            if (sx < e.x || sx > e.x + e.w) continue;
+            if (pb > mtnSurfaceY(e, sx)) { crash('mountain'); break; }
           }
           break;
         }
