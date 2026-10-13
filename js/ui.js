@@ -397,6 +397,11 @@
     const already = document.fullscreenElement || document.webkitFullscreenElement;
     if (req && !already) { try { const r = req.call(el); if (r && r.catch) r.catch(() => {}); } catch (_) {} }
   }
+  function exitFullscreen() {
+    const ex = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+    const fs = document.fullscreenElement || document.webkitFullscreenElement;
+    if (ex && fs) { try { const r = ex.call(document); if (r && r.catch) r.catch(() => {}); } catch (_) {} }
+  }
   function launch() {
     goFullscreen();                    // use the whole screen (hide the browser chrome) while playing
     goto(null);
@@ -528,6 +533,7 @@
   /* ---------------------------------------------------------- result */
   function endGame(result, scoreVal) {
     cancelAnimationFrame(timerRAF);
+    exitFullscreen();                  // leave fullscreen so the player can use the browser again
     hide(hud); hide(el.chatter);
     const hs = highScore();
     const isBest = scoreVal > hs;
