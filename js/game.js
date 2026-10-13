@@ -50,6 +50,7 @@ const Game = (() => {
   let score, birdHits, duration, elapsed, timeLeft, waveCount;
   let speedMph, speedTick, chatterTick, spawnGap, sunGlow;
   let jetHits = 0, jetBoost = 0;        // each jet stream hit speeds the course up slightly
+  let lastCrashWave = -9;               // spacing between crash obstacles (fairness)
   let floorCool, crashing, crashTime;
   let callsign = '';
 
@@ -160,7 +161,7 @@ const Game = (() => {
     currentSeed = opts.seed || (Math.floor(Math.random() * 1e9) + 1);
     seedRng(currentSeed);                                      // same seed => same terrain
 
-    plane = { x: W * 0.28, y: H * 0.45, vy: 0, angle: 0, size: 32, dead: false };
+    plane = { x: W * 0.28, y: H * 0.45, vy: 0, angle: 0, size: 32 * spriteScale, dead: false };
     entities = [];
     particles = [];
     popups = [];
@@ -170,7 +171,7 @@ const Game = (() => {
     scroll = 0; bgScroll = 0;
     scrollSpeed = 210;
     score = 0; birdHits = 0; elapsed = 0; timeLeft = duration; waveCount = 0;
-    jetHits = 0; jetBoost = 0;
+    jetHits = 0; jetBoost = 0; lastCrashWave = -9;
     speedMph = DATA.speed.min; speedTick = 0; chatterTick = 1.2;
     spawnGap = 1.0; sunGlow = 0;
     floorCool = 0; crashing = false; crashTime = 0;
@@ -329,14 +330,30 @@ const Game = (() => {
   function spawnWave(prog) {
     // weighted pick — birds are the "nightmare" (everywhere), big rewards rare
     const roll = _next();
-    if (roll < 0.34) spawnBirds(prog);
-    else if (roll < 0.46) spawnCloud();
-    else if (roll < 0.58) spawnBonus(DATA.score.bonusZone, '+100');
-    else if (roll < 0.68) spawnMountain();
-    else if (roll < 0.77) spawnTower();
-    else if (roll < 0.85) spawnSmokeStack();
-    else if (roll < 0.90) spawnBonus(spick([DATA.score.peak, DATA.score.valley]), null);
-    else if (roll < 0.965) spawnBigBird();
+    let type;
+    if (roll < 0.34) type = 'birds';
+    else if (roll < 0.46) type = 'cloud';
+    else if (roll < 0.58) type = 'bonus1';
+    else if (roll < 0.68) type = 'mountain';
+    else if (roll < 0.77) type = 'tower';
+    else if (roll < 0.85) type = 'stack';
+    else if (roll < 0.90) type = 'bonus2';
+    else if (roll < 0.965) type = 'bigbird';
+    else type = 'jet';
+    // keep crash obstacles (mountain/tower/big bird) spaced so there's always a way through.
+    // Deterministic (waveCount-based) → identical for all multiplayer clients.
+    const crash = (type === 'mountain' || type === 'tower' || type === 'bigbird');
+    if (crash && waveCount - lastCrashWave < 2) type = 'cloud';   // too soon → safe filler instead
+    if (type === 'mountain' || type === 'tower' || type === 'bigbird') lastCrashWave = waveCount;
+
+    if (type === 'birds') spawnBirds(prog);
+    else if (type === 'cloud') spawnCloud();
+    else if (type === 'bonus1') spawnBonus(DATA.score.bonusZone, '+100');
+    else if (type === 'mountain') spawnMountain();
+    else if (type === 'tower') spawnTower();
+    else if (type === 'stack') spawnSmokeStack();
+    else if (type === 'bonus2') spawnBonus(spick([DATA.score.peak, DATA.score.valley]), null);
+    else if (type === 'bigbird') spawnBigBird();
     else spawnJetStream();
   }
 
@@ -358,7 +375,7 @@ const Game = (() => {
     const y = airY();
     const yellow = srand(0, 1) < 0.6;   // some big birds are yellow (spec: Big Yellow Birds)
     entities.push({
-      type: 'bigbird', x: W + 50, y, r: 28 * spriteScale, wing: 0, baseY: y, phase: srand(0, 6.28), par: 1.7, yellow,
+      type: 'bigbird', x: W + 50, y, r: 28 * spriteScale, wing: 0, baseY: y, phase: srand(0, 6.28), par: 1.25, yellow,
       update: (e, dt) => { e.wing += dt * 11; e.phase += dt * 0.9; e.y = e.baseY + Math.sin(e.phase) * 22; },
     });
   }
@@ -404,12 +421,14 @@ const Game = (() => {
   }
 
   function spawnMountain() {
-    const h = srand(H * 0.26, H * 0.48);
+    const maxH = (floorY - ceilingY) * 0.62;   // always leave a passable lane above
+    const h = Math.min(srand(H * 0.26, H * 0.48), maxH);
     entities.push({ type: 'mountain', x: W + 40, h, w: h * mtnAspect });
   }
 
   function spawnTower() {
-    entities.push({ type: 'tower', x: W + 40, w: srand(34, 52), h: srand(H * 0.18, H * 0.42) });
+    const maxH = (floorY - ceilingY) * 0.6;
+    entities.push({ type: 'tower', x: W + 40, w: srand(34, 52), h: Math.min(srand(H * 0.18, H * 0.42), maxH) });
   }
 
   function spawnSmokeStack() {
@@ -1048,6 +1067,7 @@ const Game = (() => {
     _debug: () => ({ state, score, birdHits, timeLeft, entities: entities ? entities.length : 0,
       types: entities ? entities.reduce((a, e) => { a[e.type] = (a[e.type] || 0) + 1; return a; }, {}) : {},
       planeY: plane ? Math.round(plane.y) : null, planeX: plane ? Math.round(plane.x) : null, crashing,
+      floorY: Math.round(floorY), ceilingY: Math.round(ceilingY), planeSize: plane ? plane.size : 0,
       list: entities ? entities.map((e) => ({ t: e.type, x: Math.round(e.x), y: Math.round(e.y || 0), got: !!e.got, w: e.w || 0, h: e.h || 0, r: e.r || 0 })) : [] }),
   };
 })();
