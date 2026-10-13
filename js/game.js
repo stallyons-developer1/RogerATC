@@ -13,7 +13,9 @@ const Game = (() => {
   let bgImg = null, bgReady = false;  // background photo
   const breezeMode = !!window.BREEZE; // Breeze variant: blue theme + Breeze plane
   let planeImg = null, planeReady = false, planeAspect = 3.4;
-  let palmImgs = [], palmReady = false; // real palm silhouette sprites
+  let palmImgs = [], palmReady = false; // real palm silhouette sprites (fallback)
+  let palmAnimImg = null, palmAnimReady = false; // animated swaying palm (12-frame GIF → sheet)
+  const PALM_FRAMES = 12, PALM_FPS = 7;
   let crowImg = null, crowReady = false; // animated crow flap sheet (10 frames)
   const CROW_FRAMES = 10;
   let eagleImg = null, eagleReady = false; // animated eagle flap sheet (12 frames) — big birds
@@ -87,6 +89,10 @@ const Game = (() => {
       img.onload = () => { palmImgs[i] = img; if (palmImgs.filter(Boolean).length) palmReady = true; };
       img.src = src;
     });
+    // animated swaying palm (preferred)
+    palmAnimImg = new Image();
+    palmAnimImg.onload = () => { palmAnimReady = true; };
+    palmAnimImg.src = 'assets/palm_anim.webp';
     // realistic mountain peak
     mtnImg = new Image();
     mtnImg.onload = () => { mtnReady = true; mtnAspect = mtnImg.width / mtnImg.height; };
@@ -206,7 +212,7 @@ const Game = (() => {
 
   function mkPalm(x) {
     const h = rand(H * 0.24, H * 0.46);
-    return { x, h, img: randi(0, 1), phase: rand(0, 6.28), sway: rand(0.05, 0.09), flut: rand(0.012, 0.022) };
+    return { x, h, img: randi(0, 1), phase: rand(0, 6.28), sway: rand(0.05, 0.09), flut: rand(0.012, 0.022), frameOff: randi(0, PALM_FRAMES - 1) };
   }
 
   /* ---------------------------------------------------------- loop */
@@ -641,6 +647,16 @@ const Game = (() => {
   // Real palm silhouette, warped in horizontal slices so it bends in the wind:
   // the base stays planted while the crown/fronds sway + flutter.
   function drawPalms() {
+    if (palmAnimReady) {                      // animated swaying palm sprite
+      const fw = palmAnimImg.width / PALM_FRAMES, fh = palmAnimImg.height;
+      const base = windT * PALM_FPS;
+      for (const p of palms) {
+        const h = p.h * 1.25, w = h * (fw / fh);   // a bit taller (the sprite includes the glow margin)
+        const fi = (((Math.floor(base + p.frameOff)) % PALM_FRAMES) + PALM_FRAMES) % PALM_FRAMES;
+        ctx.drawImage(palmAnimImg, fi * fw, 0, fw, fh, p.x - w / 2, floorY + 8 - h, w, h);
+      }
+      return;
+    }
     for (const p of palms) {
       const img = palmReady ? (palmImgs[p.img] || palmImgs[0]) : null;
       if (!img) { drawPalmVector(p); continue; }
