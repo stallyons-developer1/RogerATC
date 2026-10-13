@@ -708,11 +708,12 @@
   function updateAccountUI() {
     const pill = $('userPill');
     if (currentUser) {
+      // Identify players by username/call sign, not raw email, in both versions (client request)
+      const uname = currentUser.callsign || (currentUser.email ? currentUser.email.split('@')[0] : 'Pilot');
       if (BREEZE) {
-        // Breeze identifies players by username (no email shown) — spec
-        pill.textContent = currentUser.callsign || (currentUser.email ? currentUser.email.split('@')[0] : 'Pilot');
+        pill.textContent = uname;
       } else {
-        pill.innerHTML = esc(currentUser.email) + (currentUser.verified ? '' : ' <span class="unverified">unverified</span>');
+        pill.innerHTML = esc(uname) + (currentUser.verified ? '' : ' <span class="unverified">unverified</span>');
       }
       show($('logoutBtn'));
       if (currentUser.high_score && currentUser.high_score > highScore()) saveHigh(currentUser.high_score);
