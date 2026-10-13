@@ -462,6 +462,7 @@
     chatterBusy = true;
     el.chatterText.textContent = text;
     show(el.chatter);
+    fitChatterText();                  // shrink the font so the text stays inside the bubble
     positionChatter();                 // snap above the plane right away (no flash)
     let done = false;
     const finish = () => {
@@ -476,6 +477,15 @@
       chatterTimer = setTimeout(finish, 8000);           // safety so it never gets stuck
     } else {
       chatterTimer = setTimeout(finish, isTakeoff ? 3200 : 2600);
+    }
+  }
+  // Shrink the bubble text until it fits inside the cloud (handles long phrases on small screens).
+  function fitChatterText() {
+    const t = el.chatterText;
+    t.style.fontSize = '';
+    let fs = parseFloat(getComputedStyle(t).fontSize) || 12, guard = 0;
+    while ((t.scrollHeight > t.clientHeight + 1 || t.scrollWidth > t.clientWidth + 1) && fs > 5 && guard++ < 40) {
+      fs -= 0.5; t.style.fontSize = fs + 'px';
     }
   }
   // Audio cloud follows the plane: sit just above it so the player can read without looking away.

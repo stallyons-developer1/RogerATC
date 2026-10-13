@@ -36,6 +36,7 @@ const Game = (() => {
 
   // world layout
   let ceilingY = 0, floorY = 0, groundH = 0;
+  let physScale = 1;                  // scale plane physics to the play-gap (keeps landscape playable)
 
   // player + world objects
   let plane, entities, particles, popups, debris;
@@ -126,9 +127,12 @@ const Game = (() => {
     canvas.height = Math.floor(cssH * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     W = cssW; H = cssH;
-    groundH = clamp(H * 0.14, 120, 150);   // tall enough that the floor line clears the TAP buttons
+    // shorter ground on short (landscape) screens so the play area isn't tiny
+    groundH = clamp(H * 0.14, H < 560 ? 84 : 120, 150);
     floorY = H - groundH;
     ceilingY = H * 0.085;
+    // scale plane physics to the vertical play-gap so landscape stays maneuverable (not cramped)
+    physScale = clamp((floorY - ceilingY) / 620, 0.4, 1);
     if (plane) {
       plane.x = W * 0.28;
       // keep the plane inside the new play area after an orientation/size change
@@ -177,7 +181,7 @@ const Game = (() => {
 
   function lift() {
     if (state !== 'running' || crashing) return;
-    plane.vy = DATA.physics.lift;
+    plane.vy = DATA.physics.lift * physScale;
     plane.angle = -0.45;
     Audio.play('wind');
     // little wind trail
@@ -229,7 +233,7 @@ const Game = (() => {
     // ---- plane physics (Flappy style) ----
     const P = DATA.physics;
     if (crashing) {
-      plane.vy += P.gravity * 1.4 * dt;
+      plane.vy += P.gravity * 1.4 * physScale * dt;
       plane.y += plane.vy * dt;                 // actually fall now
       plane.angle += 5.5 * dt;                  // tumble harder
       plane.x -= scrollSpeed * dt * 0.4;
@@ -237,8 +241,8 @@ const Game = (() => {
       emitSmoke(plane.x, plane.y);
       if (crashTime > 1.8) { finish('over'); return; }  // let the wreck fall a bit longer
     } else {
-      plane.vy += P.gravity * dt;
-      plane.vy = clamp(plane.vy, P.maxRise, P.maxFall);
+      plane.vy += P.gravity * physScale * dt;
+      plane.vy = clamp(plane.vy, P.maxRise * physScale, P.maxFall * physScale);
       plane.y += plane.vy * dt;
       // ease nose angle toward velocity direction
       const target = clamp(plane.vy / 700, -0.5, 0.7);
@@ -249,7 +253,7 @@ const Game = (() => {
       // floor = -50 pts penalty + bounce (not death)
       if (plane.y + plane.size * 0.4 >= floorY) {
         plane.y = floorY - plane.size * 0.4;
-        plane.vy = -260;
+        plane.vy = -260 * physScale;
         if (floorCool <= 0) { addScore(DATA.score.floorHit, plane.x, plane.y, 'bad'); Audio.play('poof'); floorCool = 0.8; }
       }
     }
