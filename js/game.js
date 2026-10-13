@@ -131,9 +131,11 @@ const Game = (() => {
     // much shorter ground on short (landscape) screens so there's room to actually play
     groundH = H < 560 ? clamp(H * 0.14, 58, 78) : clamp(H * 0.14, 120, 150);
     floorY = H - groundH;
-    ceilingY = H * (H < 560 ? 0.06 : 0.085);   // thinner ceiling margin in landscape too
-    spriteScale = H < 560 ? 0.72 : 1;          // smaller birds + plane in landscape
-    if (plane) plane.size = 32 * spriteScale;  // smaller plane in landscape (fits the tighter gap)
+    // keep the ceiling line (and its label) below the top HUD cards so they never overlap
+    ceilingY = H < 560 ? Math.max(H * 0.06, 50) : Math.max(H * 0.085, 74);
+    // scale all sprites to the screen so they aren't oversized on small phones
+    spriteScale = clamp(Math.min(W, H) / 620, 0.6, 1);
+    if (plane) plane.size = 32 * spriteScale;
     // scale plane physics to the vertical play-gap so landscape stays maneuverable (not cramped)
     physScale = clamp((floorY - ceilingY) / 620, 0.4, 1);
     if (plane) {
@@ -379,14 +381,14 @@ const Game = (() => {
   }
 
   function spawnCloud() {
-    const y0 = airY(), r = srand(26, 40);
+    const y0 = airY(), r = srand(26, 40) * spriteScale;
     const y = clearSpawnY(W + 40, r, y0);
     if (y == null) return;
     entities.push({ type: 'cloud', x: W + 40, y, r, got: false });
   }
 
   function spawnBonus(value, label) {
-    const r = clamp(24 + value * 0.028, 26, 42);  // bigger reward = bigger orb (zones vary — spec)
+    const r = clamp(24 + value * 0.028, 26, 42) * spriteScale;  // bigger reward = bigger orb; scaled to screen
     const y0 = clamp(airY(), ceilingY + r + 16, floorY - r - 16);
     const spin = srand(0, 6.28);                  // consume RNG before the (deterministic) skip check
     const y = clearSpawnY(W + 40, r, y0);
@@ -684,7 +686,7 @@ const Game = (() => {
     ctx.fillStyle = 'rgba(255,90,110,0.95)';
     ctx.font = '700 12px Trebuchet MS, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('40,000 ft CEILING', W / 2, Math.max(ceilingY + 16, 58));  // clear the top HUD in landscape
+    ctx.fillText('40,000 ft CEILING', W / 2, ceilingY + 15);   // ceilingY already clears the HUD cards
     // floor penalty line
     ctx.setLineDash([8, 8]);
     ctx.strokeStyle = 'rgba(255,200,120,0.6)';

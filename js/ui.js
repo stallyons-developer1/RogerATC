@@ -502,11 +502,14 @@
     const pos = Game.getPlanePos();
     if (!pos) return;
     const bh = b.offsetHeight || 92;
-    let top = pos.y - pos.size * 0.5 - bh - 6;          // above the plane
-    if (top < 52) top = pos.y + pos.size * 0.5 + 6;     // no room above (near ceiling) → sit below the plane
+    let top = pos.y - pos.size * 0.5 - bh - 6, below = false;   // above the plane
+    if (top < 52) { top = pos.y + pos.size * 0.5 + 6; below = true; }   // near ceiling → sit below the plane
     b.style.left = pos.x + 'px';
     b.style.top = top + 'px';
     b.style.bottom = 'auto';
+    // when below, flip the cloud 180° so its tail points up at the plane (text stays upright)
+    b.style.transform = below ? 'translateX(-50%) rotate(180deg)' : 'translateX(-50%)';
+    el.chatterText.style.transform = below ? 'rotate(180deg)' : '';
   }
   // Speak one phrase; calls onEnd when the voice finishes (so the bubble text advances in sync).
   function speak(text, onEnd) {
@@ -665,13 +668,18 @@
       return;
     }
     google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleCredential });
-    const c = $('gsiButton');
-    if (c) {
-      c.innerHTML = '';
-      google.accounts.id.renderButton(c, { theme: 'filled_blue', size: 'large', shape: 'pill', text: 'continue_with', width: 300 });
-      hide($('googleBtn'));
-    }
+    renderGoogleBtn();
+    hide($('googleBtn'));
   }
+  function renderGoogleBtn() {
+    const c = $('gsiButton');
+    if (!c || !(window.google && google.accounts && google.accounts.id)) return;
+    const w = Math.round(Math.min(400, Math.max(240, c.clientWidth || 340)));   // match the form width (GIS max 400)
+    c.innerHTML = '';
+    google.accounts.id.renderButton(c, { theme: 'filled_blue', size: 'large', shape: 'pill', text: 'continue_with', width: w });
+  }
+  // keep the Google button matching the form width on resize / rotate
+  let _gsiRz; window.addEventListener('resize', () => { clearTimeout(_gsiRz); _gsiRz = setTimeout(renderGoogleBtn, 250); });
 
   $('logoutBtn').addEventListener('click', async () => {
     Audio.play('click');

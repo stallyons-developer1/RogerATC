@@ -464,7 +464,7 @@ body.breeze .prize-note { display: none; } /* Breeze is free — no ranking, no 
   transform: translateY(-1px);
 }
 .callsign-actions { display: flex; gap: 12px; width: 100%; max-width: 420px; }
-.callsign-actions .primary-btn { flex: 2; }
+.callsign-actions .primary-btn { flex: 2; font-size: clamp(13px, 3.4vw, 16px); padding: 14px 16px; }
 .callsign-actions .ghost-btn { flex: 1; }
 
 /* ===================== HOW TO ===================== */
