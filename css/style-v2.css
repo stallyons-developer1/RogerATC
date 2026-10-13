@@ -734,12 +734,19 @@ kbd {
   .account-line { font-size: 10px; }
   .lb-list, .msg-list { max-height: 40vh; }
 
-  /* Gameplay HUD/controls: smaller so they don't eat the short height */
-  .hud-top { padding: 8px 12px; }
-  .hud-score, .hud-timer, .hud-best { padding: 5px 12px; min-width: 58px; }
-  .hud-score span:last-child, .hud-timer span:last-child, .hud-best span:last-child { font-size: 18px; }
-  .hud-bottom { padding: 8px 12px 10px; }
-  .lift-btn { width: clamp(80px, 13vw, 116px); height: clamp(58px, 20vh, 84px); border-radius: 18px; }
-  .speedo { padding: 6px 16px; }
-  .chatter { --bub: 94px; }
+  /* Gameplay HUD/controls: compact so the play area gets most of the short height */
+  .hud-top { padding: 6px 12px; }
+  .hud-score, .hud-timer, .hud-best { padding: 4px 11px; min-width: 52px; }
+  .hud-score span:last-child, .hud-timer span:last-child, .hud-best span:last-child { font-size: 16px; }
+  .hud-bottom { padding: 4px 10px 6px; }
+  .lift-btn { width: clamp(72px, 12vw, 104px); height: clamp(40px, 11vh, 54px); border-radius: 14px; }
+  .lift-btn .tap-word { font-size: clamp(18px, 3vh, 24px); }
+  .lift-btn .tap-sub { font-size: 8px; }
+  .speedo { padding: 3px 12px 4px; min-width: 96px; gap: 1px; }
+  .speedo-dial { width: 54px; height: 27px; }
+  .speedo-read { font-size: 13px; }
+  .speedo-read small { font-size: 8px; }
+  .callsign-tag { font-size: 8px; padding: 1px 6px; }
+  .hud-mini { top: 50px; }
+  .chatter { --bub: 90px; }
 }

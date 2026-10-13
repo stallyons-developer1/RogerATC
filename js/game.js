@@ -127,10 +127,11 @@ const Game = (() => {
     canvas.height = Math.floor(cssH * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     W = cssW; H = cssH;
-    // shorter ground on short (landscape) screens so the play area isn't tiny
-    groundH = clamp(H * 0.14, H < 560 ? 84 : 120, 150);
+    // much shorter ground on short (landscape) screens so there's room to actually play
+    groundH = H < 560 ? clamp(H * 0.14, 58, 78) : clamp(H * 0.14, 120, 150);
     floorY = H - groundH;
-    ceilingY = H * 0.085;
+    ceilingY = H * (H < 560 ? 0.06 : 0.085);   // thinner ceiling margin in landscape too
+    if (plane) plane.size = H < 560 ? 26 : 32;  // smaller plane in landscape (fits the tighter gap)
     // scale plane physics to the vertical play-gap so landscape stays maneuverable (not cramped)
     physScale = clamp((floorY - ceilingY) / 620, 0.4, 1);
     if (plane) {
