@@ -18,8 +18,7 @@ const Game = (() => {
   const PALM_FRAMES = 12, PALM_FPS = 7;
   let crowImg = null, crowReady = false; // animated crow flap sheet (10 frames)
   const CROW_FRAMES = 10;
-  let eagleImg = null, eagleReady = false; // animated eagle flap sheet (12 frames) — big birds
-  let eagleYellowImg = null, eagleYellowReady = false; // yellow variant (spec: Big Yellow Birds)
+  let eagleImg = null, eagleReady = false; // animated eagle flap sheet (12 frames) — BLACK big birds (client: golden confused with golden rings)
   const EAGLE_FRAMES = 12;
   let smokeImg = null, smokeReady = false; // continuous smoke plume (50-frame GIF → grid sheet) — toxic smoke
   const SMOKE_FRAMES = 75, SMOKE_COLS = 10, SMOKE_ROWS = 8;
@@ -113,9 +112,6 @@ const Game = (() => {
     eagleImg = new Image();
     eagleImg.onload = () => { eagleReady = true; };
     eagleImg.src = 'assets/birds/eagle_sheet.webp';
-    eagleYellowImg = new Image();
-    eagleYellowImg.onload = () => { eagleYellowReady = true; };
-    eagleYellowImg.src = 'assets/birds/eagle_yellow.webp';
     // billowing smoke plume sheet (6-frame churn) — toxic smoke stacks
     smokeImg = new Image();
     smokeImg.onload = () => { smokeReady = true; };
@@ -393,9 +389,8 @@ const Game = (() => {
 
   function spawnBigBird() {
     const y = airY();
-    const yellow = srand(0, 1) < 0.6;   // some big birds are yellow (spec: Big Yellow Birds)
     entities.push({
-      type: 'bigbird', x: W + 50, y, r: 28 * spriteScale, wing: 0, baseY: y, phase: srand(0, 6.28), par: 1.25, yellow,
+      type: 'bigbird', x: W + 50, y, r: 28 * spriteScale, wing: 0, baseY: y, phase: srand(0, 6.28), par: 1.25,
       update: (e, dt) => { e.wing += dt * 11; e.phase += dt * 0.9; e.y = e.baseY + Math.sin(e.phase) * 22; },
     });
   }
@@ -773,18 +768,17 @@ const Game = (() => {
       ctx.drawImage(crowImg, fi * fw, 0, fw, crowImg.height, e.x - dw / 2, e.y - dh / 2, dw, dh);
       return;
     }
-    if (big && (eagleReady || eagleYellowReady)) {
-      const img = (e.yellow && eagleYellowReady) ? eagleYellowImg : (eagleReady ? eagleImg : eagleYellowImg);
-      const fw = img.width / EAGLE_FRAMES;
+    if (big && eagleReady) {
+      const fw = eagleImg.width / EAGLE_FRAMES;
       const fi = Math.floor(e.wing * 1.4) % EAGLE_FRAMES;
-      const dh = r * 3.6, dw = dh * (fw / img.height);        // bigger than small birds, not huge
-      ctx.drawImage(img, fi * fw, 0, fw, img.height, e.x - dw / 2, e.y - dh / 2, dw, dh);
+      const dh = r * 3.6, dw = dh * (fw / eagleImg.height);   // bigger than small birds, not huge
+      ctx.drawImage(eagleImg, fi * fw, 0, fw, eagleImg.height, e.x - dw / 2, e.y - dh / 2, dw, dh);
       return;
     }
+    // fallback vector bird — BLACK silhouette for both small and big (client: big birds must be black)
     ctx.save();
     ctx.translate(e.x, e.y);
-    if (big) { ctx.shadowColor = 'rgba(255,210,70,0.95)'; ctx.shadowBlur = 20; }
-    ctx.strokeStyle = big ? '#ffcf3b' : SIL;
+    ctx.strokeStyle = SIL;
     ctx.lineWidth = big ? 6 : 3.4;
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     const up = (0.55 + 0.42 * flap) * r;
@@ -795,11 +789,8 @@ const Game = (() => {
     ctx.quadraticCurveTo(r * 0.6, -up, r * 1.5, 0);
     ctx.stroke();
     if (big) {
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = '#ffcf3b';
+      ctx.fillStyle = SIL;           // black body
       ctx.beginPath(); ctx.ellipse(0, r * 0.12, r * 0.3, r * 0.22, 0, 0, 6.28); ctx.fill();
-      ctx.fillStyle = '#e8503a';     // beak
-      ctx.beginPath(); ctx.moveTo(r * 0.26, r * 0.04); ctx.lineTo(r * 0.52, r * 0.12); ctx.lineTo(r * 0.26, r * 0.2); ctx.fill();
     }
     ctx.restore();
   }

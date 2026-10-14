@@ -463,7 +463,6 @@
       if (st === 'running') {
         const left = Math.max(0, dur - (performance.now() - t0 - pausedMs) / 1000);
         el.timer.textContent = fmtTime(left);
-        positionChatter();
       }
       timerRAF = requestAnimationFrame(tick);
     };
@@ -510,21 +509,13 @@
       fs -= 0.5; t.style.fontSize = fs + 'px';
     }
   }
-  // Audio cloud follows the plane: sit just above it so the player can read without looking away.
+  // Audio bubble is pinned at the TOP-CENTRE via CSS now (client: clear of the flight course).
+  // Clear any stale inline "follow-the-plane" styles so the CSS position always wins.
   function positionChatter() {
     const b = el.chatter;
-    if (!b || b.classList.contains('hidden') || !Game.getPlanePos) return;
-    const pos = Game.getPlanePos();
-    if (!pos) return;
-    const bh = b.offsetHeight || 92;
-    let top = pos.y - pos.size * 0.5 - bh - 6, below = false;   // above the plane
-    if (top < 52) { top = pos.y + pos.size * 0.5 + 6; below = true; }   // near ceiling → sit below the plane
-    b.style.left = pos.x + 'px';
-    b.style.top = top + 'px';
-    b.style.bottom = 'auto';
-    // when below, flip the cloud 180° so its tail points up at the plane (text stays upright)
-    b.style.transform = below ? 'translateX(-50%) rotate(180deg)' : 'translateX(-50%)';
-    el.chatterText.style.transform = below ? 'rotate(180deg)' : '';
+    if (!b) return;
+    b.style.left = ''; b.style.top = ''; b.style.bottom = ''; b.style.transform = '';
+    el.chatterText.style.transform = '';
   }
   // Speak one phrase; calls onEnd when the voice finishes (so the bubble text advances in sync).
   function speak(text, onEnd) {
