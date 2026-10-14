@@ -739,8 +739,8 @@ const Game = (() => {
     ctx.setLineDash([]);
     ctx.fillStyle = 'rgba(255,90,110,0.95)';
     ctx.font = '700 12px Trebuchet MS, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('40,000 ft CEILING', W / 2, ceilingY + 15);   // ceilingY already clears the HUD cards
+    ctx.textAlign = 'left';
+    ctx.fillText('40,000 ft CEILING', 12, ceilingY + 15);   // left-aligned so it clears the centred word bubble
     // floor penalty line
     ctx.setLineDash([8, 8]);
     ctx.strokeStyle = 'rgba(255,200,120,0.6)';
@@ -1078,7 +1078,8 @@ const Game = (() => {
 
   return {
     init, start, pause, resume, stop, lift, getState: () => state, getSeed: () => currentSeed,
-    getPlanePos: () => (plane ? { x: plane.x, y: plane.y, size: plane.size } : null),   // for the follow-the-plane word bubble
+    getPlanePos: () => (plane ? { x: plane.x, y: plane.y, size: plane.size } : null),
+    getCeiling: () => ceilingY,                     // so the word bubble can sit just below the ceiling line
     _debug: () => ({ state, score, birdHits, timeLeft, entities: entities ? entities.length : 0,
       types: entities ? entities.reduce((a, e) => { a[e.type] = (a[e.type] || 0) + 1; return a; }, {}) : {},
       planeY: plane ? Math.round(plane.y) : null, planeX: plane ? Math.round(plane.x) : null, crashing,

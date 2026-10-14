@@ -509,13 +509,17 @@
       fs -= 0.5; t.style.fontSize = fs + 'px';
     }
   }
-  // Audio bubble is pinned at the TOP-CENTRE via CSS now (client: clear of the flight course).
-  // Clear any stale inline "follow-the-plane" styles so the CSS position always wins.
+  // Audio bubble pinned at TOP-CENTRE, just BELOW the ceiling line so it never overlaps the line
+  // or the HUD score cards at any resolution (client).
   function positionChatter() {
     const b = el.chatter;
     if (!b) return;
-    b.style.left = ''; b.style.top = ''; b.style.bottom = ''; b.style.transform = '';
+    b.style.left = '50%';
+    b.style.bottom = 'auto';
+    b.style.transform = 'translateX(-50%)';
     el.chatterText.style.transform = '';
+    const cy = (Game.getCeiling && Game.getCeiling()) || 0;
+    b.style.top = (cy > 0 ? Math.round(cy + 8) : 78) + 'px';   // 8px below the ceiling line
   }
   // Speak one phrase; calls onEnd when the voice finishes (so the bubble text advances in sync).
   function speak(text, onEnd) {
