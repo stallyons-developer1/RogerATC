@@ -445,8 +445,13 @@ const Game = (() => {
   }
 
   function spawnSmokeStack() {
+    const gap = floorY - ceilingY;
     const h = srand(H * 0.16, H * 0.3);
-    const toxic = srand(H * 0.18, H * 0.4);      // toxic smoke can stretch halfway up
+    let toxic = srand(H * 0.18, H * 0.4);        // toxic smoke rises above the chimney
+    // Keep a passable lane ABOVE the smoke so players can fly over without hitting the ceiling
+    // (client: lower the stack smoke, esp. widescreen). Stack + smoke use at most 60% of the play gap.
+    const maxCol = gap * 0.60;
+    if (h + toxic > maxCol) toxic = Math.max(gap * 0.12, maxCol - h);
     entities.push({ type: 'stack', x: W + 40, w: srand(26, 40), h, toxic, got: false, puff: 0,
       update: (e, dt) => { e.puff += dt; } });
   }
@@ -1078,6 +1083,6 @@ const Game = (() => {
       types: entities ? entities.reduce((a, e) => { a[e.type] = (a[e.type] || 0) + 1; return a; }, {}) : {},
       planeY: plane ? Math.round(plane.y) : null, planeX: plane ? Math.round(plane.x) : null, crashing,
       floorY: Math.round(floorY), ceilingY: Math.round(ceilingY), planeSize: plane ? plane.size : 0,
-      list: entities ? entities.map((e) => ({ t: e.type, x: Math.round(e.x), y: Math.round(e.y || 0), got: !!e.got, w: e.w || 0, h: e.h || 0, r: e.r || 0 })) : [] }),
+      list: entities ? entities.map((e) => ({ t: e.type, x: Math.round(e.x), y: Math.round(e.y || 0), got: !!e.got, w: e.w || 0, h: e.h || 0, r: e.r || 0, toxic: Math.round(e.toxic || 0) })) : [] }),
   };
 })();
