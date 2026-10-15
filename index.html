@@ -201,6 +201,13 @@
         <h2 class="screen-title">⭐ GO PREMIUM</h2>
         <p class="screen-sub">Unlock multiplayer &amp; remove ads</p>
         <div id="payBanner" class="pay-banner hidden"><span id="payBannerText"></span><button id="payBannerX" aria-label="Dismiss">✕</button></div>
+        <div id="payProvider" class="pay-provider hidden">
+          <span class="pay-provider-label">PAY WITH</span>
+          <div class="seg pay-seg" id="provSeg">
+            <button class="seg-btn active" data-prov="stripe">💳 Card</button>
+            <button class="seg-btn" data-prov="square">◼ Square</button>
+          </div>
+        </div>
         <div class="plan-card" data-plan="multiplayer">
           <div class="plan-top"><span class="plan-name">⚔️ Multiplayer</span><span class="plan-price">$4.99<small>/mo</small></span></div>
           <p class="plan-desc">Race friends on the same course · global ranking · cash-prize leaderboard</p>
@@ -324,6 +331,18 @@
         </div>
       </div>
     </section>
+
+    <!-- Square card-entry modal (Web Payments SDK renders the card field inside #sq-card) -->
+    <div id="sqModal" class="sq-modal hidden">
+      <div class="sq-modal-box">
+        <h3 id="sqTitle" class="sq-title">Subscribe</h3>
+        <div id="sq-card" class="sq-card"></div>
+        <div id="sqMsg" class="auth-msg"></div>
+        <button id="sqPayBtn" class="primary-btn">Pay</button>
+        <button id="sqCancel" class="ghost-btn">Cancel</button>
+        <div class="sq-powered">Secured by Square</div>
+      </div>
+    </div>
 
   </div>
 

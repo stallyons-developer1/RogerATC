@@ -38,6 +38,8 @@
   let authMode = 'login';
   let GOOGLE_CLIENT_ID = '';            // loaded from api/pubconfig.php
   let STRIPE_PK = '';
+  let SQUARE = { enabled: false, appId: '', location: '', env: 'sandbox' };
+  let payProvider = 'stripe';           // which provider the Subscribe buttons use
   async function api(action, data) { return call('auth.php', action, data); }
   async function mapi(action, data) { return call('match.php', action, data); }
   async function payapi(action, data) { return call('pay.php', action, data); }
@@ -324,12 +326,64 @@
     btn.addEventListener('click', async () => {
       Audio.play('click');
       if (!currentUser) { subMsg('Please log in first.', false); return; }
-      if (btn.dataset.plan === 'runad' && currentUser.sub_runad) { openMyAd(); return; }  // already subscribed → manage ad
+      const plan = btn.dataset.plan;
+      if (plan === 'runad' && currentUser.sub_runad) { openMyAd(); return; }  // already subscribed → manage ad
+      if (payProvider === 'square' && SQUARE.enabled) { openSquareModal(plan); return; }   // Square in-page card form
       subMsg('Opening secure checkout…', true);
-      const r = await payapi('checkout', { plan: btn.dataset.plan });
+      const r = await payapi('checkout', { plan });
       if (r.error) { subMsg(r.error, false); return; }
       location.href = r.url;                               // -> Stripe Checkout
     });
+  });
+
+  /* ---------------------------------------------------------- Square (in-page card) */
+  async function squareapi(action, data) { return call('square.php', action, data); }
+  const PLAN_AMOUNTS = { multiplayer: '4.99', adfree: '6.99', runad: '24.99' };
+  let sqPayments = null, sqCard = null, sqPlan = '';
+  function setupPay() {
+    if (!SQUARE.enabled) return;
+    show($('payProvider'));
+    document.querySelectorAll('#provSeg .seg-btn').forEach((b) => b.addEventListener('click', () => {
+      Audio.play('click');
+      document.querySelectorAll('#provSeg .seg-btn').forEach((x) => x.classList.remove('active'));
+      b.classList.add('active'); payProvider = b.dataset.prov;
+    }));
+    if (!document.getElementById('sqSdk')) {              // load the Web Payments SDK (sandbox or prod)
+      const s = document.createElement('script'); s.id = 'sqSdk';
+      s.src = SQUARE.env === 'production' ? 'https://web.squarecdn.com/v1/square.js' : 'https://sandbox.web.squarecdn.com/v1/square.js';
+      document.head.appendChild(s);
+    }
+  }
+  function waitSquare() { return new Promise((res, rej) => { let n = 0; const t = setInterval(() => { if (window.Square) { clearInterval(t); res(); } else if (n++ > 50) { clearInterval(t); rej(); } }, 150); }); }
+  function sqMsg(t, ok) { const e = $('sqMsg'); e.textContent = t || ''; e.className = 'auth-msg' + (t ? (ok ? ' ok' : ' err') : ''); }
+  async function openSquareModal(plan) {
+    sqPlan = plan;
+    $('sqTitle').textContent = `Subscribe — $${PLAN_AMOUNTS[plan]}/mo`;
+    $('sqPayBtn').textContent = `Pay $${PLAN_AMOUNTS[plan]}/mo`;
+    sqMsg(''); show($('sqModal'));
+    try {
+      if (!window.Square) { sqMsg('Loading secure card form…', true); await waitSquare(); }
+      if (!sqPayments) sqPayments = window.Square.payments(SQUARE.appId, SQUARE.location);
+      if (!sqCard) { sqCard = await sqPayments.card(); await sqCard.attach('#sq-card'); }
+      sqMsg('');
+    } catch (e) { sqMsg('Could not load the card form. Please try again.', false); }
+  }
+  if ($('sqCancel')) $('sqCancel').addEventListener('click', () => { Audio.play('click'); hide($('sqModal')); });
+  if ($('sqPayBtn')) $('sqPayBtn').addEventListener('click', async () => {
+    if (!sqCard) return;
+    const btn = $('sqPayBtn'); btn.disabled = true; sqMsg('Processing…', true);
+    try {
+      const tok = await sqCard.tokenize();
+      if (tok.status !== 'OK') { sqMsg((tok.errors && tok.errors[0] && tok.errors[0].message) || 'Card details invalid.', false); btn.disabled = false; return; }
+      const resp = await squareapi('subscribe', { plan: sqPlan, source_id: tok.token });
+      if (resp.ok) {
+        const me = await api('me'); if (me.user) currentUser = me.user;
+        updateAccountUI(); hide($('sqModal'));
+        if (sqPlan === 'runad') { openMyAd(); myadMsg('🎉 Subscribed via Square! Now upload your ad.', true); }
+        else { await openSubscribe(); subMsg('🎉 Subscription active via Square — enjoy!', true); }
+      } else { sqMsg(resp.error || 'Payment failed.', false); }
+    } catch (e) { sqMsg('Payment error — please try again.', false); }
+    btn.disabled = false;
   });
 
   /* ---------------------------------------------------------- My Ad (Run an Ad) */
@@ -679,6 +733,8 @@
       const c = await (await fetch('api/pubconfig.php')).json();
       GOOGLE_CLIENT_ID = c.google_client_id || '';
       STRIPE_PK = c.stripe_pub || '';
+      SQUARE = { enabled: !!c.square_enabled, appId: c.square_app_id || '', location: c.square_location || '', env: c.square_env || 'sandbox' };
+      setupPay();
     } catch (_) {}
     initGoogle();
   }
