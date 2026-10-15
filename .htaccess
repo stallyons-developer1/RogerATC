@@ -1,0 +1,5 @@
+# Security: never serve the git repo (it contains the GitHub token in .git/.dev1-creds)
+# or the deploy scripts over HTTP. RedirectMatch is safe on Apache 2.2/2.4 + LiteSpeed.
+RedirectMatch 404 /\.git(/|$)
+RedirectMatch 404 /\.dev1-creds
+RedirectMatch 404 \.sh$
