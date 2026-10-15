@@ -67,15 +67,27 @@ if ($action === 'confirm') {
   $suid = (int) ($sess['metadata']['uid'] ?? 0);
   if ($paid && isset($PLANS[$plan]) && $suid === (int) uid()) {
     $pdo->prepare('UPDATE users SET ' . $PLANS[$plan]['col'] . ' = 1 WHERE id = ?')->execute([uid()]);
+    $cust = $sess['customer'] ?? '';                                 // remember customer -> uid for webhook events
+    if ($cust) $pdo->prepare('UPDATE users SET stripe_customer = ? WHERE id = ?')->execute([$cust, uid()]);
+    setPay($pdo, uid(), 'active', 'Your ' . $PLANS[$plan]['name'] . ' subscription is active.', 'stripe');
     out(['ok' => true, 'plan' => $plan]);
   }
   out(['error' => 'Payment not completed'], 402);
 }
 
 if ($action === 'status') {
-  $q = $pdo->prepare('SELECT sub_multiplayer, sub_adfree, sub_runad FROM users WHERE id = ?'); $q->execute([uid()]);
+  $q = $pdo->prepare('SELECT sub_multiplayer, sub_adfree, sub_runad, pay_status, pay_message, pay_provider FROM users WHERE id = ?'); $q->execute([uid()]);
   $u = $q->fetch(PDO::FETCH_ASSOC);
-  out(['sub_multiplayer' => (bool) $u['sub_multiplayer'], 'sub_adfree' => (bool) $u['sub_adfree'], 'sub_runad' => (bool) $u['sub_runad']]);
+  out([
+    'sub_multiplayer' => (bool) $u['sub_multiplayer'], 'sub_adfree' => (bool) $u['sub_adfree'], 'sub_runad' => (bool) $u['sub_runad'],
+    'pay_status' => $u['pay_status'] ?? '', 'pay_message' => $u['pay_message'] ?? '', 'pay_provider' => $u['pay_provider'] ?? '',
+  ]);
+}
+
+// User dismissed a payment notice (e.g. after reading a failure message).
+if ($action === 'clearnotice') {
+  $pdo->prepare('UPDATE users SET pay_status = NULL, pay_message = NULL WHERE id = ?')->execute([uid()]);
+  out(['ok' => true]);
 }
 
 out(['error' => 'Unknown action'], 400);

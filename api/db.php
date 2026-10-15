@@ -25,7 +25,9 @@ function db() {
     created_at   TEXT DEFAULT CURRENT_TIMESTAMP
   )');
   // migrations for existing DBs
-  foreach (['sub_multiplayer INTEGER DEFAULT 0', 'sub_adfree INTEGER DEFAULT 0', 'sub_runad INTEGER DEFAULT 0', 'last_seen TEXT'] as $def) {
+  foreach (['sub_multiplayer INTEGER DEFAULT 0', 'sub_adfree INTEGER DEFAULT 0', 'sub_runad INTEGER DEFAULT 0', 'last_seen TEXT',
+            'pay_status TEXT', 'pay_message TEXT', 'pay_provider TEXT', 'pay_at TEXT',
+            'stripe_customer TEXT', 'square_customer TEXT'] as $def) {
     try { $pdo->exec("ALTER TABLE users ADD COLUMN $def"); } catch (Exception $e) {}
   }
   $pdo->exec('CREATE TABLE IF NOT EXISTS messages (
@@ -56,4 +58,12 @@ function db() {
     created_at  TEXT DEFAULT CURRENT_TIMESTAMP
   )');
   return $pdo;
+}
+
+// Record a human-readable payment status + message on a user, so the UI can tell them
+// exactly what happened (active / payment failed + reason / past due / canceled).
+function setPay($pdo, $uid, $status, $message, $provider = null) {
+  if (!$uid) return;
+  $pdo->prepare('UPDATE users SET pay_status = ?, pay_message = ?, pay_provider = COALESCE(?, pay_provider), pay_at = ? WHERE id = ?')
+      ->execute([$status, $message, $provider, gmdate('c'), (int) $uid]);
 }

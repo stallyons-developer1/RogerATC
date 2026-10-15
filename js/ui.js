@@ -224,17 +224,36 @@
 
   /* ---------------------------------------------------------- subscribe / premium */
   function subMsg(t, ok) { const e = $('subMsg'); e.textContent = t || ''; e.className = 'auth-msg' + (t ? (ok ? ' ok' : ' err') : ''); }
-  function openSubscribe() {
+  function paintPlans() {
     document.querySelectorAll('#subscribe .plan-card').forEach((c) => {
       const owned = currentUser && ((c.dataset.plan === 'multiplayer' && currentUser.sub_multiplayer) || (c.dataset.plan === 'adfree' && currentUser.sub_adfree) || (c.dataset.plan === 'runad' && currentUser.sub_runad));
       c.classList.toggle('owned', !!owned);
       const btn = c.querySelector('.plan-btn');
       if (btn) btn.textContent = (owned && c.dataset.plan === 'runad') ? '📣 Manage My Ad' : (owned ? '✓ Active' : 'Subscribe');
     });
-    subMsg('');
+  }
+  // Tell the player EXACTLY what happened with their payment (failed reason / past due / canceled).
+  function renderPayBanner(status, message) {
+    const b = $('payBanner'); if (!b) return;
+    if (!message || status === 'active' || status === '') { b.classList.add('hidden'); return; }
+    $('payBannerText').textContent = message;
+    b.classList.remove('hidden', 'good', 'warn');
+    if (status === 'past_due' || status === 'canceled' || status === 'inactive') b.classList.add('warn');  // amber; 'failed' stays red
+  }
+  async function openSubscribe() {
+    paintPlans(); subMsg(''); renderPayBanner('', '');
     goto('subscribe');
+    if (currentUser) {                                   // pull the freshest status for the banner + owned state
+      const s = await payapi('status').catch(() => null);
+      if (s && !s.error) {
+        currentUser.sub_multiplayer = s.sub_multiplayer; currentUser.sub_adfree = s.sub_adfree; currentUser.sub_runad = s.sub_runad;
+        paintPlans();
+        renderPayBanner(s.pay_status, s.pay_message);
+      }
+    }
   }
   $('subBack').addEventListener('click', () => { Audio.play('click'); goto('menu'); });
+  if ($('payBannerX')) $('payBannerX').addEventListener('click', async () => { Audio.play('click'); $('payBanner').classList.add('hidden'); await payapi('clearnotice').catch(() => {}); });
   $('premiumBtn').addEventListener('click', () => { Audio.play('click'); if (!currentUser) { setAuthMode('login'); goto('auth'); return; } openSubscribe(); });
 
   /* ---------------------------------------------------------- messaging */
@@ -357,6 +376,7 @@
     const pay = q.get('pay');
     if (!pay) return false;
     history.replaceState(null, '', location.pathname);     // clean URL
+    if (pay === 'cancel') { await openSubscribe(); subMsg('Payment canceled — you can try again anytime.', false); return true; }
     if (pay === 'success' && q.get('session_id')) {
       const r = await payapi('confirm', { session_id: q.get('session_id') });
       if (r.ok) {
