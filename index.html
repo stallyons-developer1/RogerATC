@@ -198,30 +198,53 @@
     <!-- ===================== SUBSCRIBE / PREMIUM ===================== -->
     <section id="subscribe" class="screen hidden">
       <div class="menu-inner">
-        <h2 class="screen-title">⭐ GO PREMIUM</h2>
+        <h2 class="screen-title"><svg class="title-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l2.7 5.9 6.4.6-4.8 4.3 1.4 6.3L12 16.9l-5.7 2.7 1.4-6.3L2.9 9l6.4-.6z"/></svg>GO PREMIUM</h2>
         <p class="screen-sub">Unlock multiplayer &amp; remove ads</p>
         <div id="payBanner" class="pay-banner hidden"><span id="payBannerText"></span><button id="payBannerX" aria-label="Dismiss">✕</button></div>
         <div id="payProvider" class="pay-provider hidden">
           <span class="pay-provider-label">PAY WITH</span>
           <div class="seg pay-seg" id="provSeg">
-            <button class="seg-btn active" data-prov="stripe">💳 Card</button>
-            <button class="seg-btn" data-prov="square">◼ Square</button>
+            <button class="seg-btn active" data-prov="stripe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>Card</button>
+            <button class="seg-btn" data-prov="square"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4.5"/><rect x="9" y="9" width="6" height="6" rx="1.6"/></svg>Square</button>
           </div>
         </div>
-        <div class="plan-card" data-plan="multiplayer">
-          <div class="plan-top"><span class="plan-name">⚔️ Multiplayer</span><span class="plan-price">$4.99<small>/mo</small></span></div>
-          <p class="plan-desc">Race friends on the same course · global ranking · cash-prize leaderboard</p>
-          <button class="primary-btn plan-btn" data-plan="multiplayer">Subscribe</button>
+        <div class="plan-card recommended" data-plan="multiplayer">
+          <span class="plan-badge">Popular</span>
+          <div class="plan-head">
+            <span class="plan-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="7.5" r="3.3"/><path d="M3 20c0-3.4 2.7-5.5 6-5.5s6 2.1 6 5.5"/><path d="M16 4.6a3.3 3.3 0 0 1 0 6"/><path d="M17.6 14.7c2 .8 3.4 2.7 3.4 5.3"/></svg></span>
+            <span class="plan-name">Multiplayer</span>
+            <span class="plan-price">$4.99<small>/mo</small></span>
+          </div>
+          <ul class="plan-feats">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>Race friends on the same course</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>Global ranking</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>Cash-prize leaderboard</li>
+          </ul>
+          <button class="plan-btn" data-plan="multiplayer">Subscribe</button>
         </div>
         <div class="plan-card" data-plan="adfree">
-          <div class="plan-top"><span class="plan-name">🚫 Ad-Free</span><span class="plan-price">$6.99<small>/mo</small></span></div>
-          <p class="plan-desc">Remove all ads — pure, uninterrupted flying</p>
-          <button class="primary-btn plan-btn" data-plan="adfree">Subscribe</button>
+          <div class="plan-head">
+            <span class="plan-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4.5 4.5 19.5 19.5"/></svg></span>
+            <span class="plan-name">Ad-Free</span>
+            <span class="plan-price">$6.99<small>/mo</small></span>
+          </div>
+          <ul class="plan-feats">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>Remove all ads</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>Pure, uninterrupted flying</li>
+          </ul>
+          <button class="plan-btn" data-plan="adfree">Subscribe</button>
         </div>
         <div class="plan-card" data-plan="runad">
-          <div class="plan-top"><span class="plan-name">📣 Run an Ad</span><span class="plan-price">$24.99<small>/mo</small></span></div>
-          <p class="plan-desc">Promote your business — run your ad in the game</p>
-          <button class="primary-btn plan-btn" data-plan="runad">Subscribe</button>
+          <div class="plan-head">
+            <span class="plan-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v4h4l9 5V5L7 10H3z"/><path d="M19.5 9a4.5 4.5 0 0 1 0 6"/></svg></span>
+            <span class="plan-name">Run an Ad</span>
+            <span class="plan-price">$24.99<small>/mo</small></span>
+          </div>
+          <ul class="plan-feats">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>Promote your business</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>Run your ad in the game</li>
+          </ul>
+          <button class="plan-btn" data-plan="runad">Subscribe</button>
         </div>
         <div id="subMsg" class="auth-msg"></div>
         <button id="subBack" class="ghost-btn">← Back</button>
