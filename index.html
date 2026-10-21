@@ -162,18 +162,35 @@
         <h2 class="screen-title">⚔️ MULTIPLAYER</h2>
         <p class="screen-sub">Same course — highest score wins!</p>
         <div class="prize-note">🏆 Top rank is subject to cash prizes &amp; rewards</div>
-        <button id="mpCreate" class="primary-btn">Create Match</button>
-        <div id="mpCreated" class="mp-created hidden">
-          <p class="mp-share">Share this code with a friend:</p>
-          <div id="mpCode" class="mp-code">------</div>
-          <button id="mpCopyLink" class="ghost-btn">🔗 Copy Invite Link</button>
-          <button id="mpCreateStart" class="primary-btn">START FLIGHT ✈</button>
+        <div class="seg" id="mpModeSeg">
+          <button class="seg-btn active" data-mpmode="duel">⚔ 1v1 Duel</button>
+          <button class="seg-btn" data-mpmode="group">👥 Group (3–20)</button>
         </div>
-        <div class="auth-or"><span>or join a friend</span></div>
-        <form id="mpJoinForm" class="auth-form">
-          <input id="mpJoinCode" placeholder="Enter match code" maxlength="6" autocapitalize="characters" />
-          <button type="submit" class="google-btn">Join Match</button>
-        </form>
+
+        <div id="mpDuelUI">
+          <button id="mpCreate" class="primary-btn">Create Match</button>
+          <div id="mpCreated" class="mp-created hidden">
+            <p class="mp-share">Share this code with a friend:</p>
+            <div id="mpCode" class="mp-code">------</div>
+            <button id="mpCopyLink" class="ghost-btn">🔗 Copy Invite Link</button>
+            <button id="mpCreateStart" class="primary-btn">START FLIGHT ✈</button>
+          </div>
+          <div class="auth-or"><span>or join a friend</span></div>
+          <form id="mpJoinForm" class="auth-form">
+            <input id="mpJoinCode" placeholder="Enter match code" maxlength="6" autocapitalize="characters" />
+            <button type="submit" class="google-btn">Join Match</button>
+          </form>
+        </div>
+
+        <div id="mpGroupUI" class="hidden">
+          <button id="grpCreate" class="primary-btn">Create Group Room</button>
+          <div class="auth-or"><span>or join a group</span></div>
+          <form id="grpJoinForm" class="auth-form">
+            <input id="grpJoinCode" placeholder="Enter group code" maxlength="6" autocapitalize="characters" />
+            <button type="submit" class="google-btn">Join Group</button>
+          </form>
+        </div>
+
         <div id="mpMsg" class="auth-msg"></div>
         <button id="mpBack" class="ghost-btn">← Back</button>
       </div>
@@ -191,6 +208,34 @@
         <div id="mpStatus" class="screen-sub">Waiting for opponent to finish…</div>
         <div class="result-actions">
           <button id="mpDone" class="primary-btn hidden">Main Menu</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== GROUP LOBBY ===================== -->
+    <section id="grouplobby" class="screen hidden">
+      <div class="menu-inner">
+        <h2 class="screen-title">👥 GROUP ROOM</h2>
+        <p class="mp-share">Share this code — up to 20 pilots can join:</p>
+        <div id="grpCode" class="mp-code">------</div>
+        <button id="grpCopyLink" class="ghost-btn">🔗 Copy Invite Link</button>
+        <div class="grp-count"><b id="grpCount">1</b> / 20 joined &nbsp;·&nbsp; <span id="grpMinNote">min 3 to start</span></div>
+        <ul id="grpPlayers" class="grp-players"></ul>
+        <button id="grpStart" class="primary-btn hidden">START FLIGHT ✈</button>
+        <div id="grpWait" class="screen-sub hidden">⏳ Waiting for the host to start…</div>
+        <div id="grpMsg" class="auth-msg"></div>
+        <button id="grpLeave" class="ghost-btn">← Leave</button>
+      </div>
+    </section>
+
+    <!-- ===================== GROUP RESULT ===================== -->
+    <section id="groupresult" class="screen hidden">
+      <div class="menu-inner">
+        <h2 id="grpResultTitle" class="result-title">GROUP RESULT</h2>
+        <div id="grpStatus" class="screen-sub">Waiting for pilots to finish…</div>
+        <ol id="grpLeaderboard" class="grp-leaderboard"></ol>
+        <div class="result-actions">
+          <button id="grpDone" class="primary-btn hidden">Main Menu</button>
         </div>
       </div>
     </section>

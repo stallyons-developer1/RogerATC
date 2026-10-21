@@ -55,7 +55,22 @@ function db() {
     guest_score INTEGER DEFAULT 0,
     host_done   INTEGER DEFAULT 0,
     guest_done  INTEGER DEFAULT 0,
+    mode        TEXT DEFAULT "duel",
+    status      TEXT DEFAULT "waiting",
     created_at  TEXT DEFAULT CURRENT_TIMESTAMP
+  )');
+  foreach (['mode TEXT DEFAULT "duel"', 'status TEXT DEFAULT "waiting"'] as $def) {
+    try { $pdo->exec("ALTER TABLE matches ADD COLUMN $def"); } catch (Exception $e) {}
+  }
+  // one row per player for GROUP matches (3-20). Duel still uses the host/guest columns above.
+  $pdo->exec('CREATE TABLE IF NOT EXISTS match_players (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    match_id   INTEGER NOT NULL,
+    user_id    INTEGER NOT NULL,
+    score      INTEGER DEFAULT 0,
+    done       INTEGER DEFAULT 0,
+    joined_at  TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(match_id, user_id)
   )');
   return $pdo;
 }

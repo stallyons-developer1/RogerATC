@@ -78,4 +78,75 @@ if ($action === 'status') {
   ]);
 }
 
+/* ===================== GROUP MODE (3-20 players) ===================== */
+const GROUP_MIN = 3, GROUP_MAX = 20;
+function mByCode($pdo, $code) { $q = $pdo->prepare('SELECT * FROM matches WHERE code = ?'); $q->execute([$code]); return $q->fetch(PDO::FETCH_ASSOC); }
+function groupPlayers($pdo, $mid) {
+  $q = $pdo->prepare('SELECT user_id, score, done FROM match_players WHERE match_id = ? ORDER BY joined_at ASC, id ASC'); $q->execute([$mid]);
+  $out = [];
+  foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r)
+    $out[] = ['id' => (int) $r['user_id'], 'name' => uname($pdo, $r['user_id']), 'score' => (int) $r['score'], 'done' => (bool) $r['done']];
+  return $out;
+}
+
+if ($action === 'gcreate') {
+  $level = (body()['level'] ?? 'regular') === 'extended' ? 'extended' : 'regular';
+  $seed  = random_int(1, 2000000000);
+  do { $code = code6(); $c = $pdo->prepare('SELECT 1 FROM matches WHERE code = ?'); $c->execute([$code]); } while ($c->fetch());
+  $pdo->prepare('INSERT INTO matches (code, seed, level, host_id, mode, status) VALUES (?,?,?,?,"group","waiting")')->execute([$code, $seed, $level, uid()]);
+  $mid = (int) $pdo->lastInsertId();
+  $pdo->prepare('INSERT OR IGNORE INTO match_players (match_id, user_id) VALUES (?,?)')->execute([$mid, uid()]);
+  out(['ok' => true, 'code' => $code, 'seed' => $seed, 'level' => $level, 'host' => true]);
+}
+
+if ($action === 'gjoin') {
+  $code = strtoupper(trim(body()['code'] ?? ''));
+  $m = mByCode($pdo, $code);
+  if (!$m || $m['mode'] !== 'group') out(['error' => 'Group room not found — check the code.'], 404);
+  if ($m['status'] !== 'waiting') out(['error' => 'This group has already started.'], 409);
+  $chk = $pdo->prepare('SELECT 1 FROM match_players WHERE match_id = ? AND user_id = ?'); $chk->execute([$m['id'], uid()]);
+  if (!$chk->fetch()) {
+    $cnt = $pdo->prepare('SELECT COUNT(*) FROM match_players WHERE match_id = ?'); $cnt->execute([$m['id']]);
+    if ((int) $cnt->fetchColumn() >= GROUP_MAX) out(['error' => 'This group is full (' . GROUP_MAX . ' players).'], 409);
+    $pdo->prepare('INSERT OR IGNORE INTO match_players (match_id, user_id) VALUES (?,?)')->execute([$m['id'], uid()]);
+  }
+  out(['ok' => true, 'code' => $code, 'seed' => (int) $m['seed'], 'level' => $m['level'], 'host' => $m['host_id'] == uid()]);
+}
+
+if ($action === 'gstart') {
+  $code = strtoupper(trim(body()['code'] ?? ''));
+  $m = mByCode($pdo, $code);
+  if (!$m || $m['mode'] !== 'group') out(['error' => 'Group not found.'], 404);
+  if ($m['host_id'] != uid()) out(['error' => 'Only the host can start the game.'], 403);
+  $cnt = $pdo->prepare('SELECT COUNT(*) FROM match_players WHERE match_id = ?'); $cnt->execute([$m['id']]);
+  if ((int) $cnt->fetchColumn() < GROUP_MIN) out(['error' => 'Need at least ' . GROUP_MIN . ' players to start.'], 400);
+  $pdo->prepare('UPDATE matches SET status = "playing" WHERE id = ?')->execute([$m['id']]);
+  out(['ok' => true]);
+}
+
+if ($action === 'gsubmit') {
+  $b = body(); $code = strtoupper(trim($b['code'] ?? '')); $score = (int) ($b['score'] ?? 0);
+  $m = mByCode($pdo, $code);
+  if (!$m) out(['error' => 'Group not found.'], 404);
+  $pdo->prepare('UPDATE match_players SET score = ?, done = 1 WHERE match_id = ? AND user_id = ?')->execute([$score, $m['id'], uid()]);
+  out(['ok' => true]);
+}
+
+if ($action === 'globby') {
+  $code = strtoupper(trim($_GET['code'] ?? (body()['code'] ?? '')));
+  $m = mByCode($pdo, $code);
+  if (!$m || $m['mode'] !== 'group') out(['error' => 'Group not found.'], 404);
+  $players = groupPlayers($pdo, $m['id']);
+  $allDone = count($players) > 0 && !array_filter($players, fn($p) => !$p['done']);
+  if ($m['status'] === 'playing' && $allDone) { $pdo->prepare('UPDATE matches SET status = "done" WHERE id = ?')->execute([$m['id']]); $m['status'] = 'done'; }
+  $ranking = $players;
+  usort($ranking, fn($a, $b) => $b['score'] - $a['score']);        // highest score wins
+  out([
+    'code' => $code, 'seed' => (int) $m['seed'], 'level' => $m['level'],
+    'status' => $m['status'], 'host' => $m['host_id'] == uid(), 'you' => (int) uid(),
+    'count' => count($players), 'min' => GROUP_MIN, 'max' => GROUP_MAX,
+    'players' => $players, 'ranking' => $ranking, 'allDone' => $allDone,
+  ]);
+}
+
 out(['error' => 'Unknown action'], 400);

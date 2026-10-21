@@ -11,7 +11,7 @@
   const hide = (el) => el && el.classList.add('hidden');
 
   // ---- elements ----
-  const screens = { auth: $('auth'), menu: $('menu'), leaderboard: $('leaderboard'), multiplayer: $('multiplayer'), mpresult: $('mpresult'), subscribe: $('subscribe'), myad: $('myad'), messages: $('messages'), callsign: $('callsign'), howto: $('howto'), result: $('result'), pause: $('pause') };
+  const screens = { auth: $('auth'), menu: $('menu'), leaderboard: $('leaderboard'), multiplayer: $('multiplayer'), mpresult: $('mpresult'), grouplobby: $('grouplobby'), groupresult: $('groupresult'), subscribe: $('subscribe'), myad: $('myad'), messages: $('messages'), callsign: $('callsign'), howto: $('howto'), result: $('result'), pause: $('pause') };
   const hud = $('hud');
   const canvas = $('game');
 
@@ -55,6 +55,7 @@
   }
   let mpMatch = null;                   // active multiplayer match { code, seed, level, role } or null
   let pendingJoin = new URLSearchParams(location.search).get('join');   // from an invite link ?join=CODE
+  let pendingGroup = new URLSearchParams(location.search).get('group'); // from a group invite ?group=CODE
   const TESTUNLOCK = new URLSearchParams(location.search).get('unlock') === '1';   // ?unlock=1 → test MP/ranking without paying
 
   /* ---------------------------------------------------------- init */
@@ -149,7 +150,9 @@
   function mpMsg(t, ok) { const e = $('mpMsg'); e.textContent = t || ''; e.className = 'auth-msg' + (t ? (ok ? ' ok' : ' err') : ''); }
   function openMultiplayer() {
     mpMatch = null;
-    hide($('mpCreated')); $('mpJoinCode').value = ''; mpMsg('');
+    hide($('mpCreated')); $('mpJoinCode').value = ''; if ($('grpJoinCode')) $('grpJoinCode').value = ''; mpMsg('');
+    show($('mpDuelUI')); hide($('mpGroupUI'));                       // default to 1v1
+    document.querySelectorAll('#mpModeSeg .seg-btn').forEach((x) => x.classList.toggle('active', x.dataset.mpmode === 'duel'));
     goto('multiplayer');
   }
   $('mpBack').addEventListener('click', () => { Audio.play('click'); mpMatch = null; goto('menu'); });
@@ -223,6 +226,101 @@
     mpPoll = setInterval(poll, 2500);
   }
   $('mpDone').addEventListener('click', () => { Audio.play('click'); clearInterval(mpPoll); mpPoll = null; mpMatch = null; Game.stop(); goto('menu'); });
+
+  /* ---------------------------------------------------------- GROUP mode (3–20 players) */
+  function grpMsg(t, ok) { const e = $('grpMsg'); e.textContent = t || ''; e.className = 'auth-msg' + (t ? (ok ? ' ok' : ' err') : ''); }
+  // Duel / Group toggle on the multiplayer screen
+  document.querySelectorAll('#mpModeSeg .seg-btn').forEach((b) => b.addEventListener('click', () => {
+    Audio.play('click');
+    document.querySelectorAll('#mpModeSeg .seg-btn').forEach((x) => x.classList.remove('active'));
+    b.classList.add('active');
+    const grp = b.dataset.mpmode === 'group';
+    (grp ? show : hide)($('mpGroupUI')); (grp ? hide : show)($('mpDuelUI'));
+    hide($('mpCreated')); mpMsg('');
+  }));
+
+  $('grpCreate').addEventListener('click', async () => {
+    Audio.unlock(); Audio.play('click'); mpMsg('Creating group…', true);
+    const r = await mapi('gcreate', { level });
+    if (r.error) { mpMsg(r.error, false); return; }
+    mpMatch = { code: r.code, seed: r.seed, level: r.level, role: 'host', group: true };
+    enterLobby();
+  });
+  async function doGroupJoin(code) {
+    code = (code || '').trim().toUpperCase();
+    if (code.length < 4) { mpMsg('Enter the group code.', false); return; }
+    mpMsg('Joining group…', true);
+    const r = await mapi('gjoin', { code });
+    if (r.error) { mpMsg(r.error, false); return; }
+    mpMatch = { code: r.code, seed: r.seed, level: r.level, role: r.host ? 'host' : 'guest', group: true };
+    enterLobby();
+  }
+  $('grpJoinForm').addEventListener('submit', (e) => { e.preventDefault(); Audio.unlock(); Audio.play('click'); doGroupJoin($('grpJoinCode').value); });
+  $('grpCopyLink').addEventListener('click', async () => {
+    Audio.play('click'); if (!mpMatch) return;
+    const link = location.origin + location.pathname + '?group=' + mpMatch.code;
+    try { await navigator.clipboard.writeText(link); grpMsg('✅ Invite link copied!', true); }
+    catch (_) { grpMsg(link, true); }
+  });
+
+  let grpPoll = null, grpLaunched = false;
+  function enterLobby() {
+    grpLaunched = false;
+    $('grpCode').textContent = mpMatch.code; $('grpPlayers').innerHTML = ''; grpMsg('');
+    hide($('grpStart')); hide($('grpWait'));
+    goto('grouplobby');
+    clearInterval(grpPoll);
+    const poll = async () => {
+      const s = await mapi('globby', { code: mpMatch.code });
+      if (s.error) { grpMsg(s.error, false); return; }
+      $('grpCount').textContent = s.count;
+      $('grpMinNote').textContent = s.count >= s.min ? 'ready to start' : ('min ' + s.min + ' to start');
+      $('grpPlayers').innerHTML = s.players.map((p) => `<li class="${p.id === s.you ? 'me' : ''}">${esc(p.name)}${p.id === s.you ? ' (you)' : ''}</li>`).join('');
+      if (s.status === 'waiting') {
+        if (s.host) { show($('grpStart')); $('grpStart').disabled = s.count < s.min; $('grpStart').textContent = s.count < s.min ? `Need ${s.min}+ players…` : 'START FLIGHT ✈'; hide($('grpWait')); }
+        else { hide($('grpStart')); show($('grpWait')); }
+      } else if (!grpLaunched) {                       // host started → everyone launches the same course
+        grpLaunched = true; clearInterval(grpPoll); grpPoll = null; launchGroup();
+      }
+    };
+    poll(); grpPoll = setInterval(poll, 2000);
+  }
+  $('grpStart').addEventListener('click', async () => {
+    Audio.unlock(); Audio.play('click');
+    const r = await mapi('gstart', { code: mpMatch.code });
+    if (r.error) { grpMsg(r.error, false); return; }
+    if (!grpLaunched) { grpLaunched = true; clearInterval(grpPoll); grpPoll = null; launchGroup(); }  // host launches now
+  });
+  $('grpLeave').addEventListener('click', () => { Audio.play('click'); clearInterval(grpPoll); grpPoll = null; mpMatch = null; goto('menu'); });
+  function launchGroup() { selectedCallsign = (currentUser && currentUser.callsign) || 'NO CALL SIGN'; Audio.startMusic(); launch(); }
+
+  let grpResPoll = null;
+  function groupSubmitAndShow(scoreVal) {
+    const code = mpMatch.code;
+    mapi('gsubmit', { code, score: scoreVal });
+    $('grpResultTitle').textContent = 'GROUP RESULT'; $('grpResultTitle').classList.remove('survived');
+    $('grpStatus').textContent = 'Waiting for pilots to finish…'; $('grpLeaderboard').innerHTML = ''; hide($('grpDone'));
+    goto('groupresult');
+    clearInterval(grpResPoll);
+    const poll = async () => {
+      const s = await mapi('globby', { code });
+      if (s.error) { $('grpStatus').textContent = s.error; return; }
+      $('grpLeaderboard').innerHTML = s.ranking.map((p, i) => {
+        const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + '.';
+        return `<li class="${p.id === s.you ? 'me' : ''}${(s.allDone && i === 0) ? ' winner' : ''}"><span class="rank">${medal}</span><span class="who">${esc(p.name)}${p.id === s.you ? ' (you)' : ''}</span><b>${p.done ? p.score : '…'}</b></li>`;
+      }).join('');
+      if (s.allDone) {
+        clearInterval(grpResPoll); grpResPoll = null;
+        const win = s.ranking[0], youWon = win && win.id === s.you;
+        $('grpResultTitle').textContent = youWon ? 'YOU WIN! 🏆' : 'GROUP RESULT';
+        if (youWon) $('grpResultTitle').classList.add('survived');
+        $('grpStatus').textContent = win ? `🏆 ${esc(win.name)} wins with ${win.score}!` : 'Game over';
+        Audio.play(youWon ? 'fireworks' : 'poof'); show($('grpDone'));
+      }
+    };
+    poll(); grpResPoll = setInterval(poll, 2500);
+  }
+  $('grpDone').addEventListener('click', () => { Audio.play('click'); clearInterval(grpResPoll); grpResPoll = null; mpMatch = null; Game.stop(); goto('menu'); });
 
   /* ---------------------------------------------------------- subscribe / premium */
   function subMsg(t, ok) { const e = $('subMsg'); e.textContent = t || ''; e.className = 'auth-msg' + (t ? (ok ? ' ok' : ' err') : ''); }
@@ -492,7 +590,7 @@
     show(hud);
     curLevel = mpMatch ? mpMatch.level : level;
     const callName = selectedCallsign === 'NO CALL SIGN' ? '' : selectedCallsign;
-    el.callTag.textContent = mpMatch ? '⚔ VS' : (callName || 'SOLO');
+    el.callTag.textContent = mpMatch ? (mpMatch.group ? '👥 GROUP' : '⚔ VS') : (callName || 'SOLO');
     el.score.textContent = '0';
     el.best.textContent = highScore();
     el.timer.textContent = fmtTime(DATA.levels[curLevel]);
@@ -617,7 +715,7 @@
     const isBest = scoreVal > hs;
     if (isBest) saveHigh(scoreVal);
     if (currentUser) api('savescore', { score: scoreVal, callsign: selectedCallsign === 'NO CALL SIGN' ? null : selectedCallsign });   // sync to account
-    if (mpMatch) { mpSubmitAndShow(scoreVal); return; }   // multiplayer -> match result
+    if (mpMatch) { (mpMatch.group ? groupSubmitAndShow : mpSubmitAndShow)(scoreVal); return; }   // multiplayer / group -> result
 
     if (result === 'survived') {
       el.resultTitle.textContent = 'YOU SURVIVED!';
@@ -818,9 +916,16 @@
 
   function enterApp() {
     updateAccountUI();
-    if (pendingJoin) {                                  // arrived via an invite link
+    if (pendingJoin) {                                  // arrived via a 1v1 invite link
       const code = pendingJoin; pendingJoin = null;
       openMultiplayer(); $('mpJoinCode').value = code; doJoin(code);
+      return;
+    }
+    if (pendingGroup) {                                 // arrived via a group invite link
+      const code = pendingGroup; pendingGroup = null;
+      openMultiplayer();
+      document.querySelector('#mpModeSeg .seg-btn[data-mpmode="group"]').click();
+      $('grpJoinCode').value = code; doGroupJoin(code);
       return;
     }
     goto('menu');
