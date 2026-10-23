@@ -347,7 +347,10 @@ const Game = (() => {
     // weighted pick — birds are the "nightmare" (everywhere), big rewards rare
     const roll = _next();
     let type;
-    if (roll < 0.34) type = 'birds';
+    // Front-load JET STREAMS: much more common in the first ~18 waves so the player gets a
+    // faster race early, well before time runs out (client request). Deterministic (waveCount) → multiplayer-safe.
+    if (waveCount < 18 && roll >= 0.82) type = 'jet';   // early course: ~18% jet (vs ~3.5% later)
+    else if (roll < 0.34) type = 'birds';
     else if (roll < 0.46) type = 'cloud';
     else if (roll < 0.58) type = 'bonus1';
     else if (roll < 0.68) type = 'mountain';
