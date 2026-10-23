@@ -239,7 +239,7 @@
     hide($('mpCreated')); mpMsg('');
   }));
 
-  $('grpCreate').addEventListener('click', async () => {
+  if ($('grpCreate')) $('grpCreate').addEventListener('click', async () => {
     Audio.unlock(); Audio.play('click'); mpMsg('Creating group…', true);
     const r = await mapi('gcreate', { level });
     if (r.error) { mpMsg(r.error, false); return; }
@@ -255,8 +255,8 @@
     mpMatch = { code: r.code, seed: r.seed, level: r.level, role: r.host ? 'host' : 'guest', group: true };
     enterLobby();
   }
-  $('grpJoinForm').addEventListener('submit', (e) => { e.preventDefault(); Audio.unlock(); Audio.play('click'); doGroupJoin($('grpJoinCode').value); });
-  $('grpCopyLink').addEventListener('click', async () => {
+  if ($('grpJoinForm')) $('grpJoinForm').addEventListener('submit', (e) => { e.preventDefault(); Audio.unlock(); Audio.play('click'); doGroupJoin($('grpJoinCode').value); });
+  if ($('grpCopyLink')) $('grpCopyLink').addEventListener('click', async () => {
     Audio.play('click'); if (!mpMatch) return;
     const link = location.origin + location.pathname + '?group=' + mpMatch.code;
     try { await navigator.clipboard.writeText(link); grpMsg('✅ Invite link copied!', true); }
@@ -285,13 +285,13 @@
     };
     poll(); grpPoll = setInterval(poll, 2000);
   }
-  $('grpStart').addEventListener('click', async () => {
+  if ($('grpStart')) $('grpStart').addEventListener('click', async () => {
     Audio.unlock(); Audio.play('click');
     const r = await mapi('gstart', { code: mpMatch.code });
     if (r.error) { grpMsg(r.error, false); return; }
     if (!grpLaunched) { grpLaunched = true; clearInterval(grpPoll); grpPoll = null; launchGroup(); }  // host launches now
   });
-  $('grpLeave').addEventListener('click', () => { Audio.play('click'); clearInterval(grpPoll); grpPoll = null; mpMatch = null; goto('menu'); });
+  if ($('grpLeave')) $('grpLeave').addEventListener('click', () => { Audio.play('click'); clearInterval(grpPoll); grpPoll = null; mpMatch = null; goto('menu'); });
   function launchGroup() { selectedCallsign = (currentUser && currentUser.callsign) || 'NO CALL SIGN'; Audio.startMusic(); launch(); }
 
   let grpResPoll = null;
@@ -320,7 +320,7 @@
     };
     poll(); grpResPoll = setInterval(poll, 2500);
   }
-  $('grpDone').addEventListener('click', () => { Audio.play('click'); clearInterval(grpResPoll); grpResPoll = null; mpMatch = null; Game.stop(); goto('menu'); });
+  if ($('grpDone')) $('grpDone').addEventListener('click', () => { Audio.play('click'); clearInterval(grpResPoll); grpResPoll = null; mpMatch = null; Game.stop(); goto('menu'); });
 
   /* ---------------------------------------------------------- subscribe / premium */
   function subMsg(t, ok) { const e = $('subMsg'); e.textContent = t || ''; e.className = 'auth-msg' + (t ? (ok ? ' ok' : ' err') : ''); }
@@ -921,11 +921,13 @@
       openMultiplayer(); $('mpJoinCode').value = code; doJoin(code);
       return;
     }
-    if (pendingGroup) {                                 // arrived via a group invite link
+    if (pendingGroup && $('grpCreate')) {               // arrived via a group invite link (group UI present)
       const code = pendingGroup; pendingGroup = null;
       openMultiplayer();
-      document.querySelector('#mpModeSeg .seg-btn[data-mpmode="group"]').click();
-      $('grpJoinCode').value = code; doGroupJoin(code);
+      const gbtn = document.querySelector('#mpModeSeg .seg-btn[data-mpmode="group"]');
+      if (gbtn) gbtn.click();
+      if ($('grpJoinCode')) $('grpJoinCode').value = code;
+      doGroupJoin(code);
       return;
     }
     goto('menu');
