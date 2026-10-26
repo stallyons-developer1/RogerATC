@@ -74,6 +74,7 @@
     Object.values(screens).forEach(hide);
     hide(hud);
     if (screens[name]) show(screens[name]);
+    applyWallpaper();                                     // keep the site background in sync with survives on every screen
   }
 
   /* ---------------------------------------------------------- menu: mode/level */
@@ -132,6 +133,15 @@
     if (currentUser) return currentUser.survives || 0;
     return parseInt(localStorage.getItem('roger_survives') || '0', 10) || 0;
   }
+  const _bgPreloaded = {};
+  function preloadBg(n) {                                 // warm the browser cache so the next survive's bg appears instantly (no flash)
+    if (BREEZE) return;
+    const i = ((n - 1 + BG_COUNT) % BG_COUNT) + 1;
+    if (_bgPreloaded[i]) return;
+    const img = new Image();
+    img.src = new URL('assets/backgrounds/bg' + i + '.webp', document.baseURI).href;
+    _bgPreloaded[i] = img;
+  }
   function applyWallpaper() {
     if (BREEZE) return;                                   // backgrounds are RogerATC-only (client)
     const s = getSurvives(), root = document.documentElement;
@@ -139,6 +149,7 @@
       const url = new URL('assets/backgrounds/bg' + (((s - 1) % BG_COUNT) + 1) + '.webp', document.baseURI).href;
       root.style.setProperty('--wallpaper', "url('" + url + "')");
     } else root.style.removeProperty('--wallpaper');      // 0 survives → default sunset
+    preloadBg(s + 1);                                     // pre-fetch the NEXT background so it's cached before they survive
   }
   async function openLeaderboard() {
     goto('leaderboard');
@@ -731,7 +742,8 @@
     const isBest = scoreVal > hs;
     if (isBest) saveHigh(scoreVal);
     const soloSurvive = result === 'survived' && !mpMatch;     // completed a solo flight
-    if (currentUser) api('savescore', { score: scoreVal, survived: soloSurvive, callsign: selectedCallsign === 'NO CALL SIGN' ? null : selectedCallsign });
+    if (currentUser) api('savescore', { score: scoreVal, survived: soloSurvive, callsign: selectedCallsign === 'NO CALL SIGN' ? null : selectedCallsign })
+      .then((r) => { if (r && typeof r.survives === 'number' && !BREEZE) { currentUser.survives = r.survives; applyWallpaper(); } });   // sync to the DB's authoritative count
     if (mpMatch) { (mpMatch.group ? groupSubmitAndShow : mpSubmitAndShow)(scoreVal); return; }   // multiplayer / group -> result
     if (soloSurvive && !BREEZE) {                              // survived a flight → unlock & show the next site background (client)
       if (currentUser) currentUser.survives = (currentUser.survives || 0) + 1;
