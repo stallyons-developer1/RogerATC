@@ -75,7 +75,7 @@ html, body {
   -webkit-overflow-scrolling: touch;
   background:
     linear-gradient(180deg, rgba(14,7,28,0.64) 0%, rgba(14,7,28,0.3) 45%, rgba(14,7,28,0.6) 100%),
-    url('../assets/bg_sunset.webp') center/cover no-repeat;
+    var(--wallpaper, url('../assets/bg_sunset.webp')) center/cover no-repeat;
   animation: fadeIn 0.4s ease;
 }
 .screen.overlay { background: rgba(15, 8, 30, 0.72); backdrop-filter: blur(6px); }

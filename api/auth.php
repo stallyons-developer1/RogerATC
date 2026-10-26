@@ -32,6 +32,7 @@ function publicUser($u) {
     'sub_multiplayer' => (bool) ($u['sub_multiplayer'] ?? 0),
     'sub_adfree'      => (bool) ($u['sub_adfree'] ?? 0),
     'sub_runad'       => (bool) ($u['sub_runad'] ?? 0),
+    'survives'        => (int) ($u['survives'] ?? 0),   // flights survived → unlocks site backgrounds
   ];
 }
 
@@ -146,7 +147,9 @@ if ($action === 'savescore') {
   if ($cs) $pdo->prepare('UPDATE users SET callsign = ? WHERE id = ?')->execute([$cs, $_SESSION['uid']]);
   $pdo->prepare('UPDATE users SET high_score = MAX(high_score, ?) WHERE id = ?')
       ->execute([$score, $_SESSION['uid']]);
-  out(['ok' => true]);
+  if (!empty($b['survived'])) $pdo->prepare('UPDATE users SET survives = survives + 1 WHERE id = ?')->execute([$_SESSION['uid']]);
+  $sv = $pdo->prepare('SELECT survives FROM users WHERE id = ?'); $sv->execute([$_SESSION['uid']]);
+  out(['ok' => true, 'survives' => (int) $sv->fetchColumn()]);
 }
 
 // ---------- LEADERBOARD ----------

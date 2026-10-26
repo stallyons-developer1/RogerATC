@@ -29,3 +29,4 @@ sec
 secrets.php
 *.secret
 *.keys
+media/

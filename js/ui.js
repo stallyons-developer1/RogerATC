@@ -124,6 +124,22 @@
   });
   $('lbBack').addEventListener('click', () => { Audio.play('click'); goto('menu'); });
   function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  // Site backgrounds that unlock as the player survives flights (RogerATC only — client feature).
+  // 16 wallpapers; each survived flight advances to the next one (cycles after 16). New players see the default sunset.
+  const BG_COUNT = 16;
+  function getSurvives() {
+    if (currentUser) return currentUser.survives || 0;
+    return parseInt(localStorage.getItem('roger_survives') || '0', 10) || 0;
+  }
+  function applyWallpaper() {
+    if (BREEZE) return;                                   // backgrounds are RogerATC-only (client)
+    const s = getSurvives(), root = document.documentElement;
+    if (s > 0) {
+      const url = new URL('assets/backgrounds/bg' + (((s - 1) % BG_COUNT) + 1) + '.webp', document.baseURI).href;
+      root.style.setProperty('--wallpaper', "url('" + url + "')");
+    } else root.style.removeProperty('--wallpaper');      // 0 survives → default sunset
+  }
   async function openLeaderboard() {
     goto('leaderboard');
     const list = $('lbList'), meEl = $('lbMe');
@@ -714,8 +730,14 @@
     const hs = highScore();
     const isBest = scoreVal > hs;
     if (isBest) saveHigh(scoreVal);
-    if (currentUser) api('savescore', { score: scoreVal, callsign: selectedCallsign === 'NO CALL SIGN' ? null : selectedCallsign });   // sync to account
+    const soloSurvive = result === 'survived' && !mpMatch;     // completed a solo flight
+    if (currentUser) api('savescore', { score: scoreVal, survived: soloSurvive, callsign: selectedCallsign === 'NO CALL SIGN' ? null : selectedCallsign });
     if (mpMatch) { (mpMatch.group ? groupSubmitAndShow : mpSubmitAndShow)(scoreVal); return; }   // multiplayer / group -> result
+    if (soloSurvive && !BREEZE) {                              // survived a flight → unlock & show the next site background (client)
+      if (currentUser) currentUser.survives = (currentUser.survives || 0) + 1;
+      else localStorage.setItem('roger_survives', String(getSurvives() + 1));
+      applyWallpaper();
+    }
 
     if (result === 'survived') {
       el.resultTitle.textContent = 'YOU SURVIVED!';
@@ -916,6 +938,7 @@
 
   function enterApp() {
     updateAccountUI();
+    applyWallpaper();                                   // show the player's unlocked site background
     if (pendingJoin) {                                  // arrived via a 1v1 invite link
       const code = pendingJoin; pendingJoin = null;
       openMultiplayer(); $('mpJoinCode').value = code; doJoin(code);
