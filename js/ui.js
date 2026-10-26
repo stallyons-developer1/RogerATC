@@ -74,7 +74,8 @@
     Object.values(screens).forEach(hide);
     hide(hud);
     if (screens[name]) show(screens[name]);
-    applyWallpaper();                                     // keep the site background in sync with survives on every screen
+    if (name === 'auth') { if (!BREEZE) document.documentElement.style.removeProperty('--wallpaper'); }  // login = branded default, not an unlocked bg
+    else applyWallpaper();                                // in-app screens stay in sync with survives
   }
 
   /* ---------------------------------------------------------- menu: mode/level */
@@ -129,9 +130,20 @@
   // Site backgrounds that unlock as the player survives flights (RogerATC only — client feature).
   // 16 wallpapers; each survived flight advances to the next one (cycles after 16). New players see the default sunset.
   const BG_COUNT = 16;
+  // Version the background URLs with the same ?v= the scripts use, so a new deploy busts the
+  // browser cache (filenames don't change, so without this the old blurry copies stick around).
+  const ASSET_VER = (() => {
+    const s = document.querySelector('script[src*="js/ui.js"]');
+    const m = s && s.src.match(/[?&]v=([^&"]+)/);
+    return m ? m[1] : '';
+  })();
+  function bgUrl(i) {
+    let u = new URL('assets/backgrounds/bg' + i + '.webp', document.baseURI).href;
+    return ASSET_VER ? u + '?v=' + ASSET_VER : u;
+  }
   function getSurvives() {
-    if (currentUser) return currentUser.survives || 0;
-    return parseInt(localStorage.getItem('roger_survives') || '0', 10) || 0;
+    const local = parseInt(localStorage.getItem('roger_survives') || '0', 10) || 0;
+    return currentUser ? Math.max(local, currentUser.survives || 0) : local;   // never regress across guest/login on this device
   }
   const _bgPreloaded = {};
   function preloadBg(n) {                                 // warm the browser cache so the next survive's bg appears instantly (no flash)
@@ -139,15 +151,14 @@
     const i = ((n - 1 + BG_COUNT) % BG_COUNT) + 1;
     if (_bgPreloaded[i]) return;
     const img = new Image();
-    img.src = new URL('assets/backgrounds/bg' + i + '.webp', document.baseURI).href;
+    img.src = bgUrl(i);
     _bgPreloaded[i] = img;
   }
   function applyWallpaper() {
     if (BREEZE) return;                                   // backgrounds are RogerATC-only (client)
     const s = getSurvives(), root = document.documentElement;
     if (s > 0) {
-      const url = new URL('assets/backgrounds/bg' + (((s - 1) % BG_COUNT) + 1) + '.webp', document.baseURI).href;
-      root.style.setProperty('--wallpaper', "url('" + url + "')");
+      root.style.setProperty('--wallpaper', "url('" + bgUrl(((s - 1) % BG_COUNT) + 1) + "')");
     } else root.style.removeProperty('--wallpaper');      // 0 survives → default sunset
     preloadBg(s + 1);                                     // pre-fetch the NEXT background so it's cached before they survive
   }
@@ -742,14 +753,15 @@
     const isBest = scoreVal > hs;
     if (isBest) saveHigh(scoreVal);
     const soloSurvive = result === 'survived' && !mpMatch;     // completed a solo flight
-    if (currentUser) api('savescore', { score: scoreVal, survived: soloSurvive, callsign: selectedCallsign === 'NO CALL SIGN' ? null : selectedCallsign })
-      .then((r) => { if (r && typeof r.survives === 'number' && !BREEZE) { currentUser.survives = r.survives; applyWallpaper(); } });   // sync to the DB's authoritative count
-    if (mpMatch) { (mpMatch.group ? groupSubmitAndShow : mpSubmitAndShow)(scoreVal); return; }   // multiplayer / group -> result
     if (soloSurvive && !BREEZE) {                              // survived a flight → unlock & show the next site background (client)
-      if (currentUser) currentUser.survives = (currentUser.survives || 0) + 1;
-      else localStorage.setItem('roger_survives', String(getSurvives() + 1));
+      const next = getSurvives() + 1;
+      localStorage.setItem('roger_survives', String(next));    // track locally too → progression never resets across guest/login
+      if (currentUser) currentUser.survives = next;
       applyWallpaper();
     }
+    if (currentUser) api('savescore', { score: scoreVal, survived: soloSurvive, survives: getSurvives(), callsign: selectedCallsign === 'NO CALL SIGN' ? null : selectedCallsign })
+      .then((r) => { if (r && typeof r.survives === 'number' && !BREEZE) { currentUser.survives = Math.max(currentUser.survives || 0, r.survives); applyWallpaper(); } });   // keep DB + client in sync, never regress
+    if (mpMatch) { (mpMatch.group ? groupSubmitAndShow : mpSubmitAndShow)(scoreVal); return; }   // multiplayer / group -> result
 
     if (result === 'survived') {
       el.resultTitle.textContent = 'YOU SURVIVED!';

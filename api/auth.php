@@ -147,7 +147,12 @@ if ($action === 'savescore') {
   if ($cs) $pdo->prepare('UPDATE users SET callsign = ? WHERE id = ?')->execute([$cs, $_SESSION['uid']]);
   $pdo->prepare('UPDATE users SET high_score = MAX(high_score, ?) WHERE id = ?')
       ->execute([$score, $_SESSION['uid']]);
-  if (!empty($b['survived'])) $pdo->prepare('UPDATE users SET survives = survives + 1 WHERE id = ?')->execute([$_SESSION['uid']]);
+  if (isset($b['survives'])) {
+    // new client reports its running count (covers guest progress tracked on the device) — never regress
+    $pdo->prepare('UPDATE users SET survives = MAX(survives, ?) WHERE id = ?')->execute([(int) $b['survives'], $_SESSION['uid']]);
+  } elseif (!empty($b['survived'])) {
+    $pdo->prepare('UPDATE users SET survives = survives + 1 WHERE id = ?')->execute([$_SESSION['uid']]);
+  }
   $sv = $pdo->prepare('SELECT survives FROM users WHERE id = ?'); $sv->execute([$_SESSION['uid']]);
   out(['ok' => true, 'survives' => (int) $sv->fetchColumn()]);
 }
