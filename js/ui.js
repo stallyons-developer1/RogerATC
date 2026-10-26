@@ -951,7 +951,7 @@
     // show a live advertiser ad (image/video) if any "Run an Ad" creatives exist
     let ads = [];
     try { const r = await call('ad.php', 'active', {}); ads = (r && r.ads) || []; } catch (_) {}
-    if (!ads.length) return;
+    if (!ads.length) { document.querySelectorAll('.ad-slot').forEach((s) => s.classList.add('hidden')); return; }   // no advertiser ads → no empty box
     const ad = ads[Math.floor(Math.random() * ads.length)];
     const media = ad.type === 'video'
       ? '<video src="' + ad.src + '" muted autoplay loop playsinline></video>'
