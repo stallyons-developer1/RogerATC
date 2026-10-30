@@ -33,6 +33,9 @@
   const saveHigh = (v) => localStorage.setItem(HS_KEY, String(v));
 
   const BREEZE = !!window.BREEZE;       // Breeze free variant: no ranking, no subscriptions, MP free
+  // Dash Contest is built + working but HIDDEN for now (client: don't show it yet).
+  // Nothing is removed — flip this to true to bring the whole feature back.
+  const DASH_ENABLED = false;
   // ---- auth ----
   let currentUser = null;               // { email, verified, high_score } or null (guest)
   let authMode = 'login';
@@ -66,6 +69,7 @@
   updateMuteLabels();
   loadConfig();
   if (BREEZE) { hide($('leaderboardBtn')); hide($('premiumBtn')); }   // free, no ranking
+  if (!DASH_ENABLED) hide($('dashBtn'));                               // Dash hidden for now (code kept)
   if (new URLSearchParams(location.search).get('nodie')) {            // inspection: keep the word bubble pinned
     setInterval(() => { const c = $('chatter'); if (c) { c.classList.remove('hidden'); if (!$('chatterText').textContent) $('chatterText').textContent = 'Roger, Wilco!'; } }, 150);
   }
@@ -370,6 +374,7 @@
   function dlMsg(t, ok) { const e = $('dlMsg'); if (e) { e.textContent = t || ''; e.className = 'auth-msg' + (t ? (ok ? ' ok' : ' err') : ''); } }
 
   function openDash() {
+    if (!DASH_ENABLED) return;                                          // feature hidden for now
     if (!currentUser) { setAuthMode('login'); goto('auth'); return; }   // Dash needs sign-in (no guests)
     Audio.unlock(); Audio.play('click'); goto('dash'); dashMsg(''); loadDashHub();
   }
@@ -1179,7 +1184,7 @@
       doGroupJoin(code);
       return;
     }
-    if (pendingDash && $('dash')) {                     // arrived via a Dash invite link (?dash=CODE)
+    if (DASH_ENABLED && pendingDash && $('dash')) {     // arrived via a Dash invite link (?dash=CODE)
       const code = pendingDash; pendingDash = null;
       goto('dash'); dashMsg('');
       dapi('join', { code }).then((r) => { if (r && r.error) { loadDashHub(); dashMsg(r.error, false); } else enterDashLobby(code); });
