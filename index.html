@@ -39,6 +39,13 @@
         </div>
       </div>
 
+      <!-- Dash Contest flight progress (shown only during a Dash) -->
+      <div id="dashBanner" class="dash-banner hidden">
+        <span class="dash-banner-flight">FLIGHT <b id="dashBannerNo">1</b>/<span id="dashBannerTot">21</span></span>
+        <span class="dash-banner-sep">·</span>
+        <span class="dash-banner-surv">✓ <b id="dashBannerSurv">0</b> survived</span>
+      </div>
+
       <!-- Radio chatter word bubble -->
       <div id="chatter" class="chatter hidden">
         <div class="chatter-frost"></div>
@@ -129,6 +136,7 @@
         </div>
 
         <button id="startBtn" class="primary-btn">START FLIGHT ✈</button>
+        <button id="dashBtn" class="primary-btn dash-cta">🏁 DASH CONTEST <small>Best of 21</small></button>
 
         <div class="menu-foot">
           <button id="leaderboardBtn" class="ghost-btn">🏆 Ranking</button>
@@ -239,6 +247,83 @@
         </div>
       </div>
     </section>
+
+    <!-- ===================== DASH CONTEST — HUB ===================== -->
+    <section id="dash" class="screen hidden">
+      <div class="menu-inner">
+        <h2 class="screen-title">🏁 DASH CONTEST</h2>
+        <p class="screen-sub">Best of <b id="dashMatches">21</b> flights · <span id="dashMinMax">10–21</span> pilots · same courses · best ratio wins</p>
+        <div id="dashFeeNote" class="prize-note">🏁 Free to play (Phase 1)</div>
+
+        <div id="dashRequests" class="dash-block hidden">
+          <h3 class="dash-h3">📨 Invites</h3>
+          <ul id="dashReqList" class="dash-list"></ul>
+        </div>
+        <div id="dashActive" class="dash-block hidden">
+          <h3 class="dash-h3">▶ Your contest</h3>
+          <ul id="dashActiveList" class="dash-list"></ul>
+        </div>
+
+        <button id="dashOpen" class="primary-btn">＋ Start a Dash Contest</button>
+
+        <div id="dashOpenBlock" class="dash-block">
+          <h3 class="dash-h3">🔓 Open contests</h3>
+          <ul id="dashOpenList" class="dash-list"><li class="dash-empty">No open contests — start one!</li></ul>
+        </div>
+        <div id="dashRecent" class="dash-block hidden">
+          <h3 class="dash-h3">🏅 Recent</h3>
+          <ul id="dashRecentList" class="dash-list"></ul>
+        </div>
+
+        <div id="dashMsg" class="auth-msg"></div>
+        <button id="dashBack" class="ghost-btn">← Back</button>
+      </div>
+    </section>
+
+    <!-- ===================== DASH CONTEST — LOBBY ===================== -->
+    <section id="dashlobby" class="screen hidden">
+      <div class="menu-inner">
+        <h2 class="screen-title">🏁 DASH LOBBY</h2>
+        <p class="mp-share">Share this code — up to <span id="dlMax">21</span> pilots:</p>
+        <div id="dlCode" class="mp-code">--------</div>
+        <button id="dlCopyLink" class="ghost-btn">🔗 Copy Invite Link</button>
+        <div class="grp-count"><b id="dlCount">1</b> / <span id="dlMax2">21</span> joined &nbsp;·&nbsp; <span id="dlMinNote">min 10 to start</span></div>
+
+        <div id="dlHostTools" class="dash-block hidden">
+          <h3 class="dash-h3">✈ Invite pilots</h3>
+          <input id="dlSearch" class="dash-search" placeholder="Search a pilot by name…" autocomplete="off" />
+          <ul id="dlSearchResults" class="dash-list"></ul>
+          <div id="dlInvited" class="dash-invited"></div>
+        </div>
+
+        <ul id="dlPlayers" class="grp-players"></ul>
+        <button id="dlStart" class="primary-btn hidden">START CONTEST 🏁</button>
+        <div id="dlWait" class="screen-sub hidden">⏳ Waiting for the host to start…</div>
+        <div id="dlMsg" class="auth-msg"></div>
+        <button id="dlLeave" class="ghost-btn">← Leave</button>
+      </div>
+    </section>
+
+    <!-- ===================== DASH CONTEST — RESULT ===================== -->
+    <section id="dashresult" class="screen hidden">
+      <div class="menu-inner">
+        <h2 id="dashResultTitle" class="result-title">DASH RESULT</h2>
+        <div id="dashResultStatus" class="screen-sub">Tallying flights…</div>
+        <ol id="dashLeaderboard" class="grp-leaderboard dash-board"></ol>
+        <div class="result-actions">
+          <button id="dashDone" class="primary-btn hidden">Main Menu</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Dash between-flight preview / countdown overlay (shown over the canvas) -->
+    <div id="dashPreview" class="dash-preview hidden">
+      <div class="dash-preview-box">
+        <div id="dashPvLabel" class="dash-pv-label">GET READY</div>
+        <div id="dashPvCount" class="dash-pv-count">21</div>
+        <div id="dashPvSub" class="dash-pv-sub">Flight 1 of 21</div>
+      </div>
+    </div>
 
     <!-- ===================== SUBSCRIBE / PREMIUM ===================== -->
     <section id="subscribe" class="screen hidden">

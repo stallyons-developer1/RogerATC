@@ -14,6 +14,8 @@ Code_Generated_Image.png
 RogerATC logo 01.jpg
 image (3).png
 *.jpeg
+*.pdf
+*.zip
 Realistic Isolated Tropical Palm Tree.png
 
 # unused intermediate bubble assets (v2 files are the ones in use)
@@ -23,6 +25,9 @@ assets/bubble_mask.png
 # user-uploaded advertiser creatives (keep dir, ignore files)
 uploads/ads/ad_*
 *removalai*
+
+# internal design reference — kept LOCAL, never published to the public repo
+DASH_CONTEST_PLAN.md
 
 # local secrets scratch — NEVER commit
 sec

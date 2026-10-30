@@ -11,7 +11,7 @@
   const hide = (el) => el && el.classList.add('hidden');
 
   // ---- elements ----
-  const screens = { auth: $('auth'), menu: $('menu'), leaderboard: $('leaderboard'), multiplayer: $('multiplayer'), mpresult: $('mpresult'), grouplobby: $('grouplobby'), groupresult: $('groupresult'), subscribe: $('subscribe'), myad: $('myad'), messages: $('messages'), callsign: $('callsign'), howto: $('howto'), result: $('result'), pause: $('pause') };
+  const screens = { auth: $('auth'), menu: $('menu'), leaderboard: $('leaderboard'), multiplayer: $('multiplayer'), mpresult: $('mpresult'), grouplobby: $('grouplobby'), groupresult: $('groupresult'), dash: $('dash'), dashlobby: $('dashlobby'), dashresult: $('dashresult'), subscribe: $('subscribe'), myad: $('myad'), messages: $('messages'), callsign: $('callsign'), howto: $('howto'), result: $('result'), pause: $('pause') };
   const hud = $('hud');
   const canvas = $('game');
 
@@ -56,6 +56,7 @@
   let mpMatch = null;                   // active multiplayer match { code, seed, level, role } or null
   let pendingJoin = new URLSearchParams(location.search).get('join');   // from an invite link ?join=CODE
   let pendingGroup = new URLSearchParams(location.search).get('group'); // from a group invite ?group=CODE
+  let pendingDash = new URLSearchParams(location.search).get('dash');   // from a Dash invite ?dash=CODE
   const TESTUNLOCK = new URLSearchParams(location.search).get('unlock') === '1';   // ?unlock=1 → test MP/ranking without paying
 
   /* ---------------------------------------------------------- init */
@@ -359,6 +360,207 @@
     poll(); grpResPoll = setInterval(poll, 2500);
   }
   if ($('grpDone')) $('grpDone').addEventListener('click', () => { Audio.play('click'); clearInterval(grpResPoll); grpResPoll = null; mpMatch = null; Game.stop(); goto('menu'); });
+
+  /* ---------------------------------------------------------- DASH CONTEST */
+  async function dapi(action, data) { return call('dash.php', action, data); }
+  let dashCode = null, dashFlight = null, dashLaunched = false;
+  let dashPoll = null, dashResPoll = null, dashSearchT = null, dashTimerRAF = null, dashFlightStart = 0;
+  const DASH_PREVIEW_MS = 1500;
+  function dashMsg(t, ok) { const e = $('dashMsg'); if (e) { e.textContent = t || ''; e.className = 'auth-msg' + (t ? (ok ? ' ok' : ' err') : ''); } }
+  function dlMsg(t, ok) { const e = $('dlMsg'); if (e) { e.textContent = t || ''; e.className = 'auth-msg' + (t ? (ok ? ' ok' : ' err') : ''); } }
+
+  function openDash() {
+    if (!currentUser) { setAuthMode('login'); goto('auth'); return; }   // Dash needs sign-in (no guests)
+    Audio.unlock(); Audio.play('click'); goto('dash'); dashMsg(''); loadDashHub();
+  }
+  async function loadDashHub() {
+    const r = await dapi('index', {});
+    if (!r || r.error) { dashMsg((r && r.error) || 'Could not load.', false); return; }
+    if ($('dashMatches')) $('dashMatches').textContent = r.matches;
+    if ($('dashMinMax')) $('dashMinMax').textContent = r.min + '–' + r.max;
+    if ($('dashFeeNote')) $('dashFeeNote').textContent = r.free ? '🏁 Free to play' : '🏁 Entry fee applies';
+    const reqBlock = $('dashRequests'), reqList = $('dashReqList');
+    if (reqList) { (r.requests && r.requests.length) ? show(reqBlock) : hide(reqBlock);
+      reqList.innerHTML = (r.requests || []).map((x) => `<li><span>✈ <b>${esc(x.host)}</b> invited you</span><span class="d-act"><button class="d-go" data-join="${esc(x.code)}">Join</button><button class="d-no" data-decline="${esc(x.code)}">Decline</button></span></li>`).join(''); }
+    const actBlock = $('dashActive'), actList = $('dashActiveList');
+    if (actList) { (r.active && r.active.length) ? show(actBlock) : hide(actBlock);
+      actList.innerHTML = (r.active || []).map((x) => `<li><span>${x.status === 'running' ? '▶ In progress' : '🕒 In lobby'} · ${esc(x.code)}</span><span class="d-act"><button class="d-go" data-resume="${esc(x.code)}">Resume</button></span></li>`).join(''); }
+    const openList = $('dashOpenList');
+    if (openList) openList.innerHTML = (r.open && r.open.length)
+      ? r.open.map((x) => `<li><span>🏁 <b>${esc(x.host)}</b> · ${x.count} joined</span><span class="d-act"><button class="d-join" data-join="${esc(x.code)}">Join</button></span></li>`).join('')
+      : '<li class="dash-empty">No open contests — start one!</li>';
+    const recBlock = $('dashRecent'), recList = $('dashRecentList');
+    if (recList) { (r.recent && r.recent.length) ? show(recBlock) : hide(recBlock);
+      recList.innerHTML = (r.recent || []).map((x) => `<li><span>${esc(x.code)}</span><span>${x.place ? '#' + x.place : '—'} · ✓${x.completed}</span></li>`).join(''); }
+  }
+  if ($('dash')) $('dash').addEventListener('click', async (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.join)    { Audio.play('click'); const r = await dapi('join', { code: b.dataset.join }); if (r && r.error) { dashMsg(r.error, false); loadDashHub(); } else enterDashLobby(b.dataset.join); }
+    else if (b.dataset.resume)  { Audio.play('click'); enterDashLobby(b.dataset.resume); }
+    else if (b.dataset.decline) { Audio.play('click'); await dapi('decline', { code: b.dataset.decline }); loadDashHub(); }
+  });
+  if ($('dashOpen')) $('dashOpen').addEventListener('click', async () => {
+    Audio.unlock(); Audio.play('click'); dashMsg('Creating…', true);
+    const r = await dapi('open', {});
+    if (!r || r.error) { dashMsg((r && r.error) || 'Could not create.', false); return; }
+    enterDashLobby(r.code);
+  });
+  if ($('dashBack')) $('dashBack').addEventListener('click', () => { Audio.play('click'); goto('menu'); });
+
+  function enterDashLobby(code) {
+    dashCode = code; dashLaunched = false; dlMsg('');
+    if ($('dlCode')) $('dlCode').textContent = code;
+    if ($('dlSearchResults')) $('dlSearchResults').innerHTML = '';
+    if ($('dlSearch')) $('dlSearch').value = '';
+    goto('dashlobby'); clearInterval(dashPoll);
+    const poll = async () => {
+      const s = await dapi('state', { code });
+      if (!s || s.error) { dlMsg((s && s.error) || 'Lost the contest.', false); return; }
+      renderDashLobby(s);
+      if (s.status === 'running' && !dashLaunched) { dashLaunched = true; clearInterval(dashPoll); dashPoll = null; dashBeginPlay(s); }
+      else if (s.status === 'finished') { clearInterval(dashPoll); dashPoll = null; dashShowResult(code); }
+      else if (s.status === 'cancelled') { dlMsg('Contest cancelled — the lobby timed out.', false); }
+    };
+    poll(); dashPoll = setInterval(poll, 2000);
+  }
+  function renderDashLobby(s) {
+    if ($('dlCount')) $('dlCount').textContent = s.count;
+    if ($('dlMax')) $('dlMax').textContent = s.max_players;
+    if ($('dlMax2')) $('dlMax2').textContent = s.max_players;
+    if ($('dlMinNote')) $('dlMinNote').textContent = s.count >= s.min_players ? 'ready to start' : ('min ' + s.min_players + ' to start');
+    if ($('dlPlayers')) $('dlPlayers').innerHTML = (s.players || []).map((p) => `<li class="${p.me ? 'me' : ''}">${p.host ? '👑 ' : ''}${esc(p.name)}${p.me ? ' (you)' : ''}</li>`).join('');
+    (s.is_host ? show : hide)($('dlHostTools'));
+    if ($('dlInvited')) $('dlInvited').innerHTML = (s.invited || []).map((n) => `<span>⏳ ${esc(n)}</span>`).join('');
+    if (s.status === 'lobby') {
+      if (s.is_host) { show($('dlStart')); if ($('dlStart')) { $('dlStart').disabled = s.count < s.min_players; $('dlStart').textContent = s.count < s.min_players ? `Need ${s.min_players}+ pilots…` : 'START CONTEST 🏁'; } hide($('dlWait')); }
+      else { hide($('dlStart')); show($('dlWait')); }
+    } else { hide($('dlStart')); hide($('dlWait')); }
+  }
+  if ($('dlSearch')) $('dlSearch').addEventListener('input', () => {
+    clearTimeout(dashSearchT); const q = $('dlSearch').value.trim();
+    if (q.length < 2) { if ($('dlSearchResults')) $('dlSearchResults').innerHTML = ''; return; }
+    dashSearchT = setTimeout(async () => {
+      const r = await dapi('search', { code: dashCode, q });
+      if (!Array.isArray(r)) return;
+      if ($('dlSearchResults')) $('dlSearchResults').innerHTML = r.length
+        ? r.map((u) => `<li><span>✈ ${esc(u.name)}</span><span class="d-act"><button class="d-go" data-invite="${u.id}">Invite</button></span></li>`).join('')
+        : '<li class="dash-empty">No pilots found</li>';
+    }, 250);
+  });
+  if ($('dlSearchResults')) $('dlSearchResults').addEventListener('click', async (e) => {
+    const b = e.target.closest('button[data-invite]'); if (!b) return;
+    Audio.play('click');
+    const r = await dapi('invite', { code: dashCode, user_id: parseInt(b.dataset.invite, 10) });
+    if (r && r.error) { dlMsg(r.error, false); return; }
+    b.textContent = '✓ Invited'; b.disabled = true; renderDashLobby(r);
+  });
+  if ($('dlStart')) $('dlStart').addEventListener('click', async () => {
+    Audio.unlock(); Audio.play('click');
+    const r = await dapi('start', { code: dashCode });
+    if (r && r.error) { dlMsg(r.error, false); return; }
+    if (r && r.status === 'running' && !dashLaunched) { dashLaunched = true; clearInterval(dashPoll); dashPoll = null; dashBeginPlay(r); }
+  });
+  if ($('dlCopyLink')) $('dlCopyLink').addEventListener('click', async () => {
+    Audio.play('click'); if (!dashCode) return;
+    const link = location.origin + location.pathname + '?dash=' + dashCode;
+    try { await navigator.clipboard.writeText(link); dlMsg('✅ Invite link copied!', true); } catch (_) { dlMsg(link, true); }
+  });
+  if ($('dlLeave')) $('dlLeave').addEventListener('click', async () => {
+    Audio.play('click'); clearInterval(dashPoll); dashPoll = null;
+    if (dashCode) await dapi('leave', { code: dashCode });
+    dashCode = null; goto('menu');
+  });
+
+  // ---- dash play loop ----
+  function dashOverlay(label, big, sub) { if ($('dashPvLabel')) $('dashPvLabel').textContent = label; if ($('dashPvCount')) $('dashPvCount').textContent = big; if ($('dashPvSub')) $('dashPvSub').textContent = sub; show($('dashPreview')); }
+  function dashBeginPlay(s) {
+    Audio.startMusic(); goto(null);
+    if ($('dashBannerTot')) $('dashBannerTot').textContent = s.matches;
+    let n = Math.max(1, Math.round(Math.max(0, (s.starts_at || 0) - (s.server_now || 0)) / 1000));
+    const step = () => {
+      dashOverlay('GET READY', n, 'Contest starting…'); Audio.play('click');
+      if (n <= 1) { setTimeout(dashNextFlight, 800); return; }
+      n--; setTimeout(step, 1000);
+    };
+    step();
+  }
+  async function dashNextFlight() { dashApplyNext(await dapi('next', { code: dashCode })); }
+  function dashApplyNext(r) {
+    if (!r) { dashShowResult(dashCode); return; }
+    const s = r.state;
+    if (s && s.me) updateDashBanner(s);
+    const flight = r.flight;
+    if (!flight) {
+      // No flight yet: either the start countdown hasn't elapsed server-side, or we're done.
+      if (s && s.status === 'running' && s.me && s.me.played < s.matches) {
+        dashOverlay('GET READY', '✈', 'Contest starting…');
+        setTimeout(dashNextFlight, 1000);                 // retry until the server hands out flight 1
+        return;
+      }
+      dashShowResult(dashCode); return;                   // finished / all flights played
+    }
+    dashFlight = flight;
+    dashOverlay('FLIGHT', flight.match_no, 'of ' + (s ? s.matches : 21));
+    setTimeout(() => { hide($('dashPreview')); dashLaunchFlight(flight); }, DASH_PREVIEW_MS);
+  }
+  function updateDashBanner(s) {
+    if ($('dashBannerNo')) $('dashBannerNo').textContent = Math.min((s.me.played || 0) + 1, s.matches);
+    if ($('dashBannerSurv')) $('dashBannerSurv').textContent = s.me.completed || 0;
+  }
+  function dashLaunchFlight(flight) {
+    goto(null); show(hud); show($('dashBanner'));
+    el.callTag.textContent = '🏁 DASH';
+    el.score.textContent = '0'; el.best.textContent = highScore();
+    if ($('dashBannerNo')) $('dashBannerNo').textContent = flight.match_no;
+    const durS = (flight.time_limit_ms || 25000) / 1000;
+    el.timer.textContent = fmtTime(durS); curLevel = 'regular'; dashFlightStart = performance.now();
+    Game.start({
+      duration: durS, seed: flight.seed, callsign: '',
+      callbacks: {
+        onScore: (v) => { el.score.textContent = v; },
+        onSpeed: (mph) => { if (!isFinite(mph)) return; el.speed.textContent = mph; const maxS = DATA.speed.max || 700; const t = (mph - DATA.speed.min) / (maxS - DATA.speed.min); el.needle.style.transform = `translateX(-50%) rotate(${(-80 + t * 160)}deg)`; },
+        onChatter: (text, isTakeoff) => showChatter(text, isTakeoff),
+        onEnd: (result, scoreVal) => dashFlightEnd(result, scoreVal),
+      },
+    });
+    cancelAnimationFrame(dashTimerRAF);
+    const t0 = performance.now();
+    const tick = () => { const st = Game.getState(); if (st === 'over' || st === 'idle') return; if (st === 'running') el.timer.textContent = fmtTime(Math.max(0, durS - (performance.now() - t0) / 1000)); dashTimerRAF = requestAnimationFrame(tick); };
+    dashTimerRAF = requestAnimationFrame(tick);
+  }
+  async function dashFlightEnd(result, scoreVal) {
+    cancelAnimationFrame(dashTimerRAF);
+    const durationMs = Math.round(performance.now() - dashFlightStart);
+    const r = await dapi('finish', { code: dashCode, match_no: dashFlight.match_no, result: result === 'survived' ? 'won' : 'crashed', duration_ms: durationMs, score: scoreVal });
+    dashApplyNext(r);
+  }
+
+  // ---- dash result ----
+  function dashShowResult(code) {
+    hide($('dashBanner')); Game.stop();
+    if ($('dashResultTitle')) { $('dashResultTitle').textContent = 'DASH RESULT'; $('dashResultTitle').classList.remove('survived'); }
+    if ($('dashResultStatus')) $('dashResultStatus').textContent = 'Tallying flights…';
+    if ($('dashLeaderboard')) $('dashLeaderboard').innerHTML = ''; hide($('dashDone'));
+    goto('dashresult'); clearInterval(dashResPoll);
+    const poll = async () => {
+      const s = await dapi('state', { code });
+      if (!s || s.error) { if ($('dashResultStatus')) $('dashResultStatus').textContent = (s && s.error) || 'Error'; return; }
+      if ($('dashLeaderboard')) $('dashLeaderboard').innerHTML = (s.players || []).map((p) => {
+        const medal = p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : p.rank + '.';
+        return `<li class="${p.me ? 'me' : ''}${(s.status === 'finished' && p.rank === 1) ? ' winner' : ''}"><span class="rank">${medal}</span><span class="who">${esc(p.name)}${p.me ? ' (you)' : ''}</span><b>✓${p.completed} · ${p.total_score}</b></li>`;
+      }).join('');
+      if (s.status === 'finished') {
+        clearInterval(dashResPoll); dashResPoll = null;
+        const won = s.me && s.me.place === 1;
+        if ($('dashResultTitle')) { $('dashResultTitle').textContent = won ? 'YOU WIN! 🏆' : 'DASH COMPLETE'; if (won) $('dashResultTitle').classList.add('survived'); }
+        if ($('dashResultStatus')) $('dashResultStatus').textContent = s.me ? `You survived ${s.me.completed}/${s.matches} — rank #${s.me.place}` : 'Contest finished';
+        Audio.play(won ? 'fireworks' : 'poof'); show($('dashDone'));
+      } else if ($('dashResultStatus')) $('dashResultStatus').textContent = 'Waiting for other pilots to finish…';
+    };
+    poll(); dashResPoll = setInterval(poll, 2500);
+  }
+  if ($('dashDone')) $('dashDone').addEventListener('click', () => { Audio.play('click'); clearInterval(dashResPoll); dashResPoll = null; dashCode = null; Game.stop(); goto('menu'); });
+  if ($('dashBtn')) $('dashBtn').addEventListener('click', openDash);
 
   /* ---------------------------------------------------------- subscribe / premium */
   function subMsg(t, ok) { const e = $('subMsg'); e.textContent = t || ''; e.className = 'auth-msg' + (t ? (ok ? ' ok' : ' err') : ''); }
@@ -975,6 +1177,12 @@
       if (gbtn) gbtn.click();
       if ($('grpJoinCode')) $('grpJoinCode').value = code;
       doGroupJoin(code);
+      return;
+    }
+    if (pendingDash && $('dash')) {                     // arrived via a Dash invite link (?dash=CODE)
+      const code = pendingDash; pendingDash = null;
+      goto('dash'); dashMsg('');
+      dapi('join', { code }).then((r) => { if (r && r.error) { loadDashHub(); dashMsg(r.error, false); } else enterDashLobby(code); });
       return;
     }
     goto('menu');

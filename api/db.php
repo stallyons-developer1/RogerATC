@@ -72,6 +72,63 @@ function db() {
     joined_at  TEXT DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(match_id, user_id)
   )');
+
+  // ---- Dash Contests: best of N seeded flights, 10-21 players ----
+  // Timing fields (expires_at/starts_at/ends_at/issued_at/joined_at) are epoch MILLISECONDS so the
+  // JS client can compare them directly to its server_now clock. Money is always cents (integers).
+  $pdo->exec('CREATE TABLE IF NOT EXISTS dash_contests (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    code            TEXT UNIQUE NOT NULL,
+    host_id         INTEGER,
+    status          TEXT NOT NULL DEFAULT "lobby",   -- lobby|starting|running|finished|cancelled
+    entry_fee_cents INTEGER NOT NULL DEFAULT 0,       -- 0 = free (Phase 1 / Breeze): no fee, no prizes
+    prizes_cents    TEXT NOT NULL DEFAULT "[]",       -- JSON [1st,2nd,3rd]
+    matches         INTEGER NOT NULL DEFAULT 21,
+    min_players     INTEGER NOT NULL DEFAULT 10,
+    max_players     INTEGER NOT NULL DEFAULT 21,
+    time_limit_ms   INTEGER NOT NULL DEFAULT 25000,   -- per-flight clock (short dash flights)
+    seed            INTEGER NOT NULL,                 -- same seed → identical flights for everyone
+    expires_at      INTEGER NOT NULL,                 -- lobby closes then if not started
+    starts_at       INTEGER,
+    ends_at         INTEGER,
+    finished_at     INTEGER,
+    created_at      TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at      INTEGER
+  )');
+  $pdo->exec('CREATE INDEX IF NOT EXISTS idx_dash_status ON dash_contests(status)');
+  $pdo->exec('CREATE TABLE IF NOT EXISTS dash_entries (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    dash_contest_id INTEGER NOT NULL,
+    user_id         INTEGER NOT NULL,
+    status          TEXT NOT NULL DEFAULT "invited",  -- invited|declined|joined|left|removed
+    payment_status  TEXT NOT NULL DEFAULT "none",     -- none|held|charged|released|refunded (Phase 2)
+    gateway         TEXT,
+    payment_ref     TEXT,
+    played          INTEGER NOT NULL DEFAULT 0,
+    completed       INTEGER NOT NULL DEFAULT 0,        -- flights survived → the ratio
+    total_score     INTEGER NOT NULL DEFAULT 0,        -- tiebreak: higher total score wins
+    place           INTEGER,
+    prize_cents     INTEGER NOT NULL DEFAULT 0,
+    payout_note     TEXT,
+    paid_out_at     INTEGER,
+    joined_at       INTEGER,
+    finished_at     INTEGER,
+    created_at      TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at      INTEGER,
+    UNIQUE(dash_contest_id, user_id)
+  )');
+  $pdo->exec('CREATE INDEX IF NOT EXISTS idx_dash_entry_user ON dash_entries(user_id, status)');
+  $pdo->exec('CREATE TABLE IF NOT EXISTS dash_plays (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    dash_entry_id INTEGER NOT NULL,
+    match_no      INTEGER NOT NULL,
+    issued_at     INTEGER NOT NULL,                   -- when the server handed out the flight
+    result        TEXT,                               -- won(survived)|crashed|timeout
+    duration_ms   INTEGER,
+    score         INTEGER DEFAULT 0,
+    created_at    TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(dash_entry_id, match_no)
+  )');
   return $pdo;
 }
 
